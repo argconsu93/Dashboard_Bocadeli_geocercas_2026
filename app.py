@@ -45,9 +45,11 @@ def obtener_html_dashboard():
         {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
     ]
 
-    logo_b64_default = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-    logo_base64_src = f"data:image/png;base64,{logo_b64_default}"
+    # Logo SVG estilizado de Bocadeli vectorizado en Data-URI (Funciona 100% offline o en la nube)
+    logo_svg_inline = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 80' fill='%23ffffff'><text x='10' y='55' font-family='Arial, sans-serif' font-size='46' font-weight='900' letter-spacing='-1'>bocadeli</text><circle cx='290' cy='32' r='8' fill='%23dc2626'/></svg>"
+    logo_base64_src = logo_svg_inline
 
+    # Si existe una imagen física de logo localmente o en GitHub, la intenta leer y usar en su lugar
     posibles_nombres_logo = ["logo_bocadeli_blanco.png", "descarga_2.png", "descarga.png", "logo.png", "logo_bocadeli.png"]
     for nombre_logo in posibles_nombres_logo:
         if os.path.exists(nombre_logo):
@@ -90,8 +92,8 @@ def obtener_html_dashboard():
             text-align: center; display: flex; flex-direction: column; gap: 14px;
         }}
         .login-card-container .login-logo {{
-            height: 48px; object-fit: contain; margin: 0 auto;
-            filter: brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2445%) hue-rotate(212deg) brightness(92%) contrast(97%);
+            height: 52px; object-fit: contain; margin: 0 auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
         }}
         .login-card-container h2 {{ font-size: 1.25rem; font-weight: 700; color: #0b1e42; }}
         .login-card-container p {{ font-size: 0.85rem; color: #64748b; line-height: 1.4; }}
@@ -275,7 +277,7 @@ def obtener_html_dashboard():
 
     <div id="login-modal">
         <div class="login-card-container">
-            <img src="{logo_base64_src}" class="login-logo" alt="Logo Bocadeli Monocromático">
+            <img src="{logo_base64_src}" class="login-logo" alt="Logo Bocadeli">
             <h2>Control de Acceso - SV Centro</h2>
             <p>Seleccione su nombre e ingrese su contraseña para continuar:</p>
             
@@ -819,7 +821,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="http://googleusercontent.com/maps.google.com/8${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="http://googleusercontent.com/maps.google.com/9${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
