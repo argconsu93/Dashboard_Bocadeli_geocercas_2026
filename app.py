@@ -1,158 +1,1135 @@
 import streamlit as st
-import pandas as pd
+import streamlit.components.v1 as components
 import json
+import base64
 import os
-import folium
-from streamlit_folium import st_folium
 
-st.set_page_config(page_title="Dashboard Bocadeli - SV Centro", layout="wide")
+# Configuración de página a pantalla completa
+st.set_page_config(
+    page_title="Dashboard Inteligencia Comercial - Bocadeli",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-# CARPETA Y RUTAS DE DATOS EN LA NUBE
-DATA_DIR = "data_nube"
-os.makedirs(DATA_DIR, exist_ok=True)
-csv_path = os.path.join(DATA_DIR, "SVCentro_Grupos_actualizado.csv")
-geojson_path = os.path.join(DATA_DIR, "Geocercas_SVCentro.geojson")
+st.markdown("""
+    <style>
+        .main .block-container {
+            padding: 0rem !important;
+            max-width: 100% !important;
+        }
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+    </style>
+""", unsafe_allow_html=True)
 
-# LISTADO DE USUARIOS Y ROLES
-USUARIOS_ROLES = [
-    {"nombre": "JORGE LUIS PINEDA", "rol": "Supervisor", "grupo": "GRUPO_01", "pass": "G01"},
-    {"nombre": "OSCAR ANTONIO DEL CID", "rol": "Supervisor", "grupo": "GRUPO_02", "pass": "G02"},
-    {"nombre": "RICARDO ERNESTO RIVAS", "rol": "Supervisor", "grupo": "GRUPO_03", "pass": "G03"},
-    {"nombre": "NOE ALBERTO CORNEJO", "rol": "Supervisor", "grupo": "GRUPO_04", "pass": "G04"},
-    {"nombre": "CHRISTIAN CORTEZ", "rol": "Supervisor", "grupo": "GRUPO_05", "pass": "G05"},
-    {"nombre": "JAIME NAVARRO", "rol": "Supervisor", "grupo": "GRUPO_06", "pass": "G06"},
-    {"nombre": "RUBEN OCEAS HERNANDEZ", "rol": "Supervisor", "grupo": "GRUPO_07", "pass": "G07"},
-    {"nombre": "EDWIN ADONAY GALEAS", "rol": "Supervisor", "grupo": "GRUPO_08", "pass": "G08"},
-    {"nombre": "LUIS ALFREDO LOPEZ", "rol": "Supervisor", "grupo": "GRUPO_09", "pass": "G09"},
-    {"nombre": "MANUEL ANTONIO ORELLANA", "rol": "Supervisor", "grupo": "GRUPO_10", "pass": "G10"},
-    {"nombre": "NOE HERNANDEZ", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
-    {"nombre": "ALVARO CAMPOS", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
-    {"nombre": "JESSICA MEJIA", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
-    {"nombre": "WILBER MERCADO", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
-    {"nombre": "ISRAEL CONSUEGRA", "rol": "Administrador", "grupo": "TODOS", "pass": "SVCENTRO"},
-    {"nombre": "PAOLA CASTANEDA", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
-    {"nombre": "ALDAHIR RODRIGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
-    {"nombre": "RENE DOMINGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
-    {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
-]
+def obtener_html_dashboard():
+    usuarios_roles_data = [
+        {"nombre": "JORGE LUIS PINEDA", "rol": "Supervisor", "grupo": "GRUPO_01", "pass": "G01"},
+        {"nombre": "OSCAR ANTONIO DEL CID", "rol": "Supervisor", "grupo": "GRUPO_02", "pass": "G02"},
+        {"nombre": "RICARDO ERNESTO RIVAS", "rol": "Supervisor", "grupo": "GRUPO_03", "pass": "G03"},
+        {"nombre": "NOE ALBERTO CORNEJO", "rol": "Supervisor", "grupo": "GRUPO_04", "pass": "G04"},
+        {"nombre": "CHRISTIAN CORTEZ", "rol": "Supervisor", "grupo": "GRUPO_05", "pass": "G05"},
+        {"nombre": "JAIME NAVARRO", "rol": "Supervisor", "grupo": "GRUPO_06", "pass": "G06"},
+        {"nombre": "RUBEN OCEAS HERNANDEZ", "rol": "Supervisor", "grupo": "GRUPO_07", "pass": "G07"},
+        {"nombre": "EDWIN ADONAY GALEAS", "rol": "Supervisor", "grupo": "GRUPO_08", "pass": "G08"},
+        {"nombre": "LUIS ALFREDO LOPEZ", "rol": "Supervisor", "grupo": "GRUPO_09", "pass": "G09"},
+        {"nombre": "MANUEL ANTONIO ORELLANA", "rol": "Supervisor", "grupo": "GRUPO_10", "pass": "G10"},
+        {"nombre": "NOE HERNANDEZ", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
+        {"nombre": "ALVARO CAMPOS", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
+        {"nombre": "JESSICA MEJIA", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
+        {"nombre": "WILBER MERCADO", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
+        {"nombre": "ISRAEL CONSUEGRA", "rol": "Administrador", "grupo": "TODOS", "pass": "SVCENTRO"},
+        {"nombre": "PAOLA CASTANEDA", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
+        {"nombre": "ALDAHIR RODRIGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
+        {"nombre": "RENE DOMINGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
+        {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
+    ]
 
-# GESTIÓN DE SESIÓN
-if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-    st.session_state.usuario = None
+    logo_b64_default = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    logo_base64_src = f"data:image/png;base64,{logo_b64_default}"
 
-if not st.session_state.autenticado:
-    st.markdown("<h2 style='text-align: center; color: #1e3a8a;'>BOCADELI - SV CENTRO</h2>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align: center; color: #64748b;'>Control de Acceso Comercial</h4>", unsafe_allow_html=True)
+    posibles_nombres_logo = ["logo_bocadeli_blanco.png", "descarga_2.png", "descarga.png", "logo.png", "logo_bocadeli.png"]
+    for nombre_logo in posibles_nombres_logo:
+        if os.path.exists(nombre_logo):
+            try:
+                with open(nombre_logo, "rb") as img_f:
+                    b64_str = base64.b64encode(img_f.read()).decode('utf-8')
+                    logo_base64_src = f"data:image/png;base64,{b64_str}"
+                    break
+            except Exception:
+                pass
+
+    return f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard Inteligencia Comercial - Bocadeli</title>
     
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        nombres = ["-- Seleccione su Nombre --"] + sorted([u["nombre"] for u in USUARIOS_ROLES])
-        user_sel = st.selectbox("Usuario", nombres)
-        pass_sel = st.text_input("Contraseña", type="password")
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }}
+        body {{ display: flex; flex-direction: column; height: 100vh; background-color: #f4f6f9; color: #1e293b; overflow: hidden; }}
         
-        if st.button("Ingresar al Dashboard", use_container_width=True):
-            user_obj = next((u for u in USUARIOS_ROLES if u["nombre"] == user_sel), None)
-            if user_obj and pass_sel.strip().lower() == user_obj["pass"].lower():
-                st.session_state.autenticado = True
-                st.session_state.usuario = user_obj
-                st.rerun()
-            else:
-                st.error("⚠️ Contraseña incorrecta o usuario no seleccionado.")
-    st.stop()
+        #login-modal {{
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 30, 66, 0.88); backdrop-filter: blur(6px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
+            padding: 20px;
+        }}
+        .login-card-container {{
+            background: white; width: 420px; max-width: 90%; padding: 30px;
+            border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            text-align: center; display: flex; flex-direction: column; gap: 14px;
+        }}
+        .login-card-container .login-logo {{
+            height: 48px; object-fit: contain; margin: 0 auto;
+            filter: brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2445%) hue-rotate(212deg) brightness(92%) contrast(97%);
+        }}
+        .login-card-container h2 {{ font-size: 1.25rem; font-weight: 700; color: #0b1e42; }}
+        .login-card-container p {{ font-size: 0.85rem; color: #64748b; line-height: 1.4; }}
+        
+        .login-input-group {{ text-align: left; display: flex; flex-direction: column; gap: 4px; }}
+        .login-input-group label {{ font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }}
+        
+        .login-select, .login-input {{
+            width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #cbd5e1;
+            font-size: 0.88rem; font-weight: 600; color: #0f172a; outline: none; background: #f8fafc;
+        }}
+        .login-btn {{
+            background: #1e3a8a; color: white; border: none; padding: 12px;
+            border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            transition: background 0.2s; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); margin-top: 6px;
+        }}
+        .login-btn:hover {{ background: #0b1e42; }}
+        #login-error {{ color: #dc2626; font-size: 0.8rem; font-weight: 600; display: none; margin-top: -4px; }}
 
-# INTERFAZ PRINCIPAL TRAS INICIAR SESIÓN
-user = st.session_state.usuario
-st.sidebar.markdown(f"👤 **{user['nombre']}** \n*Rol: {user['rol']}*")
-if st.sidebar.button("Cerrar Sesión"):
-    st.session_state.autenticado = False
-    st.session_state.usuario = None
-    st.rerun()
+        .powered-by-text {{
+            margin-top: 14px; font-size: 0.75rem; font-weight: 300;
+            color: rgba(255, 255, 255, 0.75); letter-spacing: 0.03em; text-align: center;
+        }}
 
-st.sidebar.divider()
+        header {{
+            background: linear-gradient(135deg, #0b1e42 0%, #1e3a8a 100%);
+            color: white; padding: 6px 20px; display: flex;
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15); z-index: 1000;
+        }}
+        .header-brand {{ display: flex; align-items: center; gap: 16px; }}
+        .header-logo {{ height: 42px; width: auto; max-width: 150px; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }}
+        .header-text-group {{ display: flex; flex-direction: column; }}
+        .header-title-text {{ font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; line-height: 1.2; }}
+        .header-sub-text {{ font-size: 0.82rem; font-weight: 500; color: #ffffff; opacity: 0.95; margin-top: 2px; }}
 
-# PANEL DE ADMINISTRADOR EXCLUSIVO PARA ISRAEL CONSUEGRA
-if user["rol"] == "Administrador":
-    st.sidebar.subheader("⚙️ Panel de Administración")
-    up_csv = st.sidebar.file_uploader("Actualizar Clientes (CSV)", type=["csv"])
-    if up_csv:
-        with open(csv_path, "wb") as f:
-            f.write(up_csv.getbuffer())
-        st.sidebar.success("✅ CSV actualizado para todos los usuarios.")
-        st.rerun()
+        .header-user-info {{ display: flex; align-items: center; gap: 10px; }}
+        .user-pill {{
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem;
+            font-weight: 600; display: flex; align-items: center; gap: 6px;
+        }}
+        .btn-logout {{
+            background: rgba(220, 38, 38, 0.85); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;
+            transition: background 0.2s;
+        }}
+        .btn-logout:hover {{ background: #dc2626; }}
 
-    up_json = st.sidebar.file_uploader("Actualizar Geocercas (GeoJSON)", type=["geojson", "json"])
-    if up_json:
-        with open(geojson_path, "wb") as f:
-            f.write(up_json.getbuffer())
-        st.sidebar.success("✅ GeoJSON actualizado para todos los usuarios.")
-        st.rerun()
-    st.sidebar.divider()
+        .badge-date {{
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem;
+            font-weight: 600; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }}
 
-# VERIFICACIÓN DE ARCHIVOS
-if not os.path.exists(csv_path):
-    st.warning("⚠️ No se encuentra el archivo CSV base en el servidor. Por favor, súbelo utilizando el rol de Administrador en el menú lateral.")
-    st.stop()
+        .main-container {{ display: flex; flex: 1; position: relative; overflow: hidden; }}
+        
+        .sidebar {{
+            width: 395px; background: white; border-right: 1px solid #e2e8f0;
+            display: flex; flex-direction: column; gap: 12px; padding: 14px;
+            overflow-y: auto; z-index: 500; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }}
 
-# CARGA DE DATOS DESDE EL SERVIDOR
-df = pd.read_csv(csv_path, dtype=str)
-df.columns = df.columns.str.strip().str.lower()
+        .admin-panel {{
+            background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px;
+            border-radius: 10px; display: none; flex-direction: column; gap: 8px;
+        }}
+        .admin-panel label {{ font-size: 0.72rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }}
+        .admin-file-input {{ font-size: 0.75rem; color: #1e293b; width: 100%; }}
 
-# FILTROS EN BARRA LATERAL
-st.sidebar.subheader("🔍 Filtros Operativos")
-grupo_options = [user["grupo"]] if user["rol"] == "Supervisor" else ["TODOS"] + sorted(df['grupo_clean'].dropna().unique().tolist()) if 'grupo_clean' in df.columns else ["TODOS"]
-grupo_sel = st.sidebar.selectbox("Grupo Operativo", grupo_options, disabled=(user["rol"] == "Supervisor"))
+        .drawer-handle {{
+            display: none; background: #0f172a; color: white; padding: 12px 16px;
+            border-radius: 14px 14px 0 0; cursor: pointer;
+            font-size: 0.85rem; font-weight: 700; box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+            user-select: none;
+        }}
+        .drawer-handle .pill {{
+            width: 38px; height: 4px; background: rgba(255,255,255,0.4);
+            border-radius: 2px; margin: 0 auto 6px auto;
+        }}
 
-rutas_disponibles = ["TODOS"] + sorted(df['ruta_clean'].dropna().unique().tolist()) if 'ruta_clean' in df.columns else ["TODOS"]
-ruta_sel = st.sidebar.selectbox("Ruta", rutas_disponibles)
+        .filter-section {{ background: #f8fafc; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0; }}
+        .filter-section label {{ font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 5px; display: block; }}
+        
+        select {{
+            width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;
+            font-size: 0.85rem; font-weight: 600; color: #0f172a; outline: none; background: white;
+        }}
+        select:disabled {{ background-color: #e2e8f0; color: #64748b; cursor: not-allowed; }}
 
-dias_disponibles = ["TODOS", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
-dia_sel = st.sidebar.selectbox("Día de Visita", dias_disponibles)
+        .day-buttons {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }}
+        .btn-day {{
+            padding: 7px 4px; border: 1px solid #cbd5e1; background: white;
+            border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+            text-align: center; color: #334155; transition: all 0.2s; user-select: none;
+        }}
+        .btn-day.active {{ background: #1e3a8a; color: white; border-color: #1e3a8a; }}
 
-st.title("📊 Dashboard Inteligencia Comercial - Bocadeli SV Centro")
-st.write(f"Visualización centralizada en la nube para: **{user['nombre']}**")
+        .kpi-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }}
+        .kpi-card {{
+            background: white; border: 1px solid #e2e8f0; padding: 8px 4px;
+            border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }}
+        .kpi-card .val {{ font-size: 1.1rem; font-weight: 700; color: #1e3a8a; }}
+        .kpi-card .lbl {{ font-size: 0.58rem; font-weight: 600; color: #64748b; text-transform: uppercase; margin-top: 2px; }}
+        .kpi-card.alert .val {{ color: #dc2626; }}
+        .kpi-card.success .val {{ color: #16a34a; }}
+        .kpi-card.info .val {{ color: #0284c7; }}
 
-# FILTRADO DE DATOS EN PANDAS
-df_filtrado = df.copy()
-if grupo_sel != "TODOS":
-    df_filtrado = df_filtrado[df_filtrado['grupo_clean'] == grupo_sel]
-if ruta_sel != "TODOS":
-    df_filtrado = df_filtrado[df_filtrado['ruta_clean'] == ruta_sel]
-if dia_sel != "TODOS":
-    df_filtrado = df_filtrado[df_filtrado['dia_clean'].str.lower() == dia_sel.lower()]
+        .download-section {{ display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }}
+        
+        .btn-download {{
+            width: 100%; padding: 10px 14px; border: none; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all 0.2s ease; text-decoration: none;
+        }}
+        .btn-download-visited {{ background-color: #16a34a; color: white; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25); }}
+        .btn-download-visited:hover {{ background-color: #15803d; }}
 
-# MÉTRICAS / KPIS
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Clientes Filtrados", len(df_filtrado))
-col2.metric("Rutas Activas", df_filtrado['ruta_clean'].nunique() if 'ruta_clean' in df_filtrado.columns else 0)
-col3.metric("Grupos Activos", df_filtrado['grupo_clean'].nunique() if 'grupo_clean' in df_filtrado.columns else 0)
+        .btn-download-itinerary {{ background-color: #0284c7; color: white; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25); }}
+        .btn-download-itinerary:hover {{ background-color: #0369a1; }}
 
-# MAPA INTERACTIVO CON FOLIUM
-st.subheader("🗺️ Mapa de Operación y Cobertura")
-m = folium.Map(location=[13.6929, -89.2182], zoom_start=11)
+        .nav-btn {{
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 6px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;
+            text-decoration: none; color: white !important; transition: opacity 0.2s;
+        }}
+        .nav-btn:hover {{ opacity: 0.9; }}
+        .btn-gmaps {{ background-color: #4285F4; }}
+        .btn-waze {{ background-color: #33CCFF; color: #000000 !important; }}
 
-# Pintar puntos en el mapa si existen coordenadas
-for _, row in df_filtrado.iterrows():
-    try:
-        lat = float(row.get('latitud', row.get('lat', 0)))
-        lng = float(row.get('longitud', row.get('lng', 0)))
-        if lat != 0 and lng != 0:
-            nombre_cli = row.get('nombre', 'Cliente')
-            codigo_cli = row.get('codigo', 'S/C')
-            folium.CircleMarker(
-                location=[lat, lng],
-                radius=5,
-                color="#1e40af",
-                fill=True,
-                fill_color="#2563eb",
-                fill_opacity=0.8,
-                popup=f"<b>{nombre_cli}</b><br>Código: {codigo_cli}"
-            ).add_to(m)
-    except:
-        pass
+        .table-section {{ background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 2px; }}
+        .table-title {{ font-size: 0.78rem; font-weight: 700; color: #1e293b; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }}
+        .table-wrapper {{ max-height: 160px; overflow-y: auto; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; }}
+        table {{ width: 100%; border-collapse: collapse; font-size: 0.72rem; }}
+        th {{ background-color: #f8fafc; color: #475569; font-weight: 700; text-align: left; padding: 5px 7px; position: sticky; top: 0; border-bottom: 2px solid #e2e8f0; z-index: 2; }}
+        td {{ padding: 5px 7px; border-bottom: 1px solid #f1f5f9; color: #334155; }}
+        tr.clickable-row {{ cursor: pointer; transition: background 0.15s; }}
+        tr.clickable-row:hover {{ background-color: #e0f2fe !important; }}
+        tr.visited-row {{ background-color: #f0fdf4; }}
+        tr.outside-row {{ background-color: #fef2f2; }}
 
-st_folium(m, width="100%", height=450)
+        #map {{ flex: 1; height: 100%; background: #e2e8f0; }}
 
-# TABLA DETALLE DE CLIENTES
-st.subheader("📋 Detalle de Clientes Registrados")
-st.dataframe(df_filtrado[['codigo', 'nombre', 'grupo_clean', 'ruta_clean', 'dia_clean', 'direccion']] if not df_filtrado.empty else df_filtrado, use_container_width=True)
+        path.glow-geofence {{
+            filter: drop-shadow(0 0 2px rgba(2, 132, 199, 0.4));
+            stroke: #38bdf8 !important; stroke-width: 3px !important;
+            animation: pulseGlow 2.5s infinite alternate;
+        }}
+        @keyframes pulseGlow {{
+            0% {{ filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.4)); opacity: 0.75; }}
+            100% {{ filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.7)); opacity: 0.95; }}
+        }}
+
+        @media (max-width: 768px) {{
+            .main-container {{ flex-direction: column; position: relative; }}
+            #map {{ height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }}
+            .sidebar {{
+                position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 75vh; max-height: 75vh;
+                z-index: 1000; border-radius: 16px 16px 0 0; box-shadow: 0 -6px 20px rgba(0,0,0,0.3);
+                padding: 0 16px 16px 16px; border-right: none; background: white; overflow-y: auto;
+                transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0);
+            }}
+            .sidebar.collapsed {{ transform: translateY(calc(100% - 52px)); overflow: hidden; }}
+            .drawer-handle {{
+                display: block; position: sticky; top: 0; background: #0f172a; color: white;
+                padding: 12px 16px; margin: 0 -16px 12px -16px; border-radius: 14px 14px 0 0;
+                cursor: pointer; z-index: 1010; user-select: none; min-height: 52px; box-sizing: border-box;
+            }}
+            .day-buttons {{ grid-template-columns: repeat(7, 1fr); }}
+            .header-title-text {{ font-size: 0.95rem; }}
+            .header-sub-text {{ font-size: 0.75rem; }}
+            .badge-date {{ font-size: 0.75rem; padding: 4px 10px; }}
+        }}
+    </style>
+</head>
+<body>
+
+    <div id="login-modal">
+        <div class="login-card-container">
+            <img src="{logo_base64_src}" class="login-logo" alt="Logo Bocadeli Monocromático">
+            <h2>Control de Acceso - SV Centro</h2>
+            <p>Seleccione su nombre e ingrese su contraseña para continuar:</p>
+            
+            <div class="login-input-group">
+                <label><i class="fa-solid fa-user"></i> Usuario</label>
+                <select id="select-usuario-login" class="login-select">
+                    <option value="">-- Seleccione su Nombre --</option>
+                </select>
+            </div>
+
+            <div class="login-input-group">
+                <label><i class="fa-solid fa-key"></i> Contraseña</label>
+                <input type="password" id="input-password" class="login-input" placeholder="Ingrese su contraseña" onkeydown="if(event.key === 'Enter') validarLogin()">
+            </div>
+
+            <div id="login-error">⚠️ Contraseña incorrecta. Intente nuevamente.</div>
+
+            <button class="login-btn" onclick="validarLogin()">Ingresar al Dashboard</button>
+        </div>
+        <div class="powered-by-text">
+            powered by sales systems (commercial intelligence)
+        </div>
+    </div>
+
+    <header>
+        <div class="header-brand">
+            <img src="{logo_base64_src}" class="header-logo" alt="Logo Bocadeli">
+            <div class="header-text-group">
+                <span class="header-title-text">BOCADELI - SV CENTRO</span>
+                <span class="header-sub-text">Inteligencia comercial</span>
+            </div>
+        </div>
+        <div class="header-user-info">
+            <div class="user-pill" id="user-session-display">
+                <i class="fa-solid fa-user-shield"></i> <span id="txt-rol-activo">Invitado</span>
+            </div>
+            <button class="btn-logout" onclick="cerrarSesion()" title="Cerrar Sesión">
+                <i class="fa-solid fa-right-from-bracket"></i> Salir
+            </button>
+            <div class="badge-date">
+                <i class="fa-regular fa-calendar-days"></i>
+                <span id="fecha-actual">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar" id="mobile-drawer">
+            <div class="drawer-handle" onclick="toggleDrawer()">
+                <div class="pill"></div>
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <span><i class="fa-solid fa-sliders"></i> Filtros e Indicadores</span>
+                    <span id="drawer-btn-label" style="color: #38bdf8; font-size: 0.78rem; font-weight: 600;">
+                        <i class="fa-solid fa-chevron-down"></i> Ocultar
+                    </span>
+                </div>
+            </div>
+
+            <div class="admin-panel" id="panel-admin-actualizacion">
+                <label><i class="fa-solid fa-cloud-arrow-up"></i> Panel de Carga y Actualización (Admin)</label>
+                <div>
+                    <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px;">1. Clientes (CSV):</span>
+                    <input type="file" id="file-csv-input" accept=".csv" class="admin-file-input" onchange="subirNuevoCSV(event)">
+                </div>
+                <div>
+                    <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">2. Geocercas Rutas (GeoJSON):</span>
+                    <input type="file" id="file-geojson-input" accept=".geojson,.json" class="admin-file-input" onchange="subirNuevoGeoJSON(event)">
+                </div>
+                <div>
+                    <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">3. Geocercas Distribuidoras (GeoJSON):</span>
+                    <input type="file" id="file-distribuidoras-input" accept=".geojson,.json" class="admin-file-input" onchange="subirNuevoGeoJSONDistribuidoras(event)">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label><i class="fa-solid fa-layer-group"></i> Grupo Operativo</label>
+                <select id="select-grupo" onchange="alCambiarGrupo()">
+                    <option value="TODOS">-- Todos los Grupos --</option>
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <label><i class="fa-solid fa-route"></i> Ruta</label>
+                <select id="select-ruta" onchange="alCambiarRuta()">
+                    <option value="TODOS">-- Todas las Rutas --</option>
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <label><i class="fa-regular fa-calendar-days"></i> Día de Visita</label>
+                <div class="day-buttons">
+                    <button class="btn-day" id="btn-TODOS" onclick="filtrarDia('TODOS', this)">TODOS</button>
+                    <button class="btn-day" id="btn-Lunes" onclick="filtrarDia('Lunes', this)">Lun</button>
+                    <button class="btn-day" id="btn-Martes" onclick="filtrarDia('Martes', this)">Mar</button>
+                    <button class="btn-day" id="btn-Miércoles" onclick="filtrarDia('Miércoles', this)">Mié</button>
+                    <button class="btn-day" id="btn-Jueves" onclick="filtrarDia('Jueves', this)">Jue</button>
+                    <button class="btn-day" id="btn-Viernes" onclick="filtrarDia('Viernes', this)">Vie</button>
+                    <button class="btn-day" id="btn-Sábado" onclick="filtrarDia('Sábado', this)">Sáb</button>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="val" id="kpi-total">0</div><div class="lbl">Filtrados</div></div>
+                <div class="kpi-card"><div class="val" id="kpi-coords">0</div><div class="lbl">C/ Coords</div></div>
+                <div class="kpi-card alert"><div class="val" id="kpi-fuera">0</div><div class="lbl">Fuera Geoc.</div></div>
+                <div class="kpi-card success"><div class="val" id="kpi-visitados">0</div><div class="lbl">Visitados</div></div>
+                <div class="kpi-card info"><div class="val" id="kpi-pendientes">0</div><div class="lbl">Pendientes</div></div>
+                <div class="kpi-card success"><div class="val" id="kpi-porcentaje">0%</div><div class="lbl">% Avance</div></div>
+            </div>
+
+            <div class="table-section">
+                <div class="table-title">
+                    <span><i class="fa-solid fa-table-list"></i> Detalle de Clientes Registrados</span>
+                    <span style="font-size: 0.62rem; color: #64748b; font-weight: normal;">(Haz clic para ubicar)</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cód.</th>
+                                <th>Cliente</th>
+                                <th>Ruta</th>
+                                <th>Día</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-clientes-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="table-section">
+                <div class="table-title" style="color: #dc2626;">
+                    <span><i class="fa-solid fa-triangle-exclamation"></i> Clientes Fuera de Geocerca</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cód.</th>
+                                <th>Cliente</th>
+                                <th>Ruta</th>
+                                <th>Día</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-fuera-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="download-section">
+                <button class="btn-download btn-download-visited" onclick="descargarClientesVisitados()">
+                    <i class="fa-solid fa-file-excel"></i> Descargar Clientes Visitados (.xlsx)
+                </button>
+                <button class="btn-download btn-download-itinerary" onclick="descargarItinerarioFiltrado()">
+                    <i class="fa-solid fa-file-export"></i> Descargar Itinerario Filtrado (.xlsx)
+                </button>
+            </div>
+
+        </aside>
+
+        <div id="map"></div>
+    </div>
+
+    <script>
+        const MAPEO_RUTAS_GRUPOS = {{
+            '1.1.54': 'GRUPO_02',
+            '1.1.51': 'GRUPO_05',
+            '1.2.45': 'GRUPO_06',
+            '1.2.46': 'GRUPO_06'
+        }};
+
+        let rawClientes = [];
+        let rawGeocercas = {{"type": "FeatureCollection", "features": []}};
+        let rawDistribuidoras = {{"type": "FeatureCollection", "features": []}};
+        
+        const listaUsuariosRoles = {json.dumps(usuarios_roles_data)};
+
+        let usuarioActual = null;
+        let diaSeleccionado = 'NINGUNO';
+        let map, markersGroup, geocercasLayerGroup, distribuidorasLayerGroup;
+        
+        const clienteMarkersMap = {{}}; 
+        const clientesVisitadosMap = new Map(); 
+        let ultimoClientesFiltrados = [];
+        let ultimoClientesFuera = [];
+
+        window.onload = function() {{
+            localStorage.removeItem('bocadeli_custom_clientes');
+            localStorage.removeItem('bocadeli_custom_geocercas');
+            localStorage.removeItem('bocadeli_custom_distribuidoras');
+            
+            actualizarFechaActual();
+            poblarModalLogin();
+        }};
+
+        function poblarModalLogin() {{
+            const selectLogin = document.getElementById('select-usuario-login');
+            selectLogin.innerHTML = '<option value="">-- Seleccione su Nombre --</option>';
+            listaUsuariosRoles.sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+            listaUsuariosRoles.forEach(u => {{
+                const opt = document.createElement('option');
+                opt.value = u.nombre;
+                opt.textContent = u.nombre;
+                selectLogin.appendChild(opt);
+            }});
+        }}
+
+        function validarLogin() {{
+            const nombreSel = document.getElementById('select-usuario-login').value;
+            const passInput = document.getElementById('input-password').value.trim().toLowerCase();
+            const errorDiv = document.getElementById('login-error');
+
+            if (!nombreSel) {{
+                errorDiv.textContent = "⚠️ Por favor seleccione su nombre.";
+                errorDiv.style.display = 'block';
+                return;
+            }}
+
+            const userObj = listaUsuariosRoles.find(u => u.nombre === nombreSel);
+
+            if (userObj && passInput === userObj.pass.toLowerCase()) {{
+                usuarioActual = userObj;
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('txt-rol-activo').textContent = `${{usuarioActual.nombre}} (${{usuarioActual.rol}})`;
+                
+                if (usuarioActual.rol === 'Administrador') {{
+                    document.getElementById('panel-admin-actualizacion').style.display = 'flex';
+                }} else {{
+                    document.getElementById('panel-admin-actualizacion').style.display = 'none';
+                }}
+
+                initDashboardConPermisos();
+            }} else {{
+                errorDiv.textContent = "⚠️ Contraseña incorrecta. Verifique e intente de nuevo.";
+                errorDiv.style.display = 'block';
+            }}
+        }}
+
+        function cerrarSesion() {{
+            usuarioActual = null;
+            document.getElementById('input-password').value = '';
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('login-modal').style.display = 'flex';
+            
+            if (map) {{
+                map.remove();
+                map = null;
+            }}
+        }}
+
+        function procesarPropiedadesGeocercas() {{
+            if (!rawGeocercas || !rawGeocercas.features) return;
+
+            rawGeocercas.features.forEach(feat => {{
+                let props = feat.properties || {{}};
+                let rutaName = String(props.Name || props.name || props.nambe || '').trim();
+                feat.properties.ruta_clean = rutaName;
+                
+                let grupoClean = "Sin Grupo";
+
+                if (MAPEO_RUTAS_GRUPOS[rutaName]) {{
+                    grupoClean = MAPEO_RUTAS_GRUPOS[rutaName];
+                }} else {{
+                    let m_g = String(props.description || '').match(/GRUPO\s*([0-9]+)/i);
+                    if (m_g) {{
+                        grupoClean = "GRUPO_" + m_g[1].padStart(2, '0');
+                    }} else if (rawClientes && rawClientes.length > 0) {{
+                        let matchCliente = rawClientes.find(c => c.ruta === rutaName && c.grupo && c.grupo !== "Sin Grupo");
+                        if (matchCliente) grupoClean = matchCliente.grupo;
+                    }}
+                }}
+
+                feat.properties.grupo_clean = grupoClean;
+            }});
+        }}
+
+        function subirNuevoCSV(event) {{
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {{
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {{
+                    const parsedData = results.data;
+                    let nuevosClientes = [];
+
+                    parsedData.forEach(row => {{
+                        let keys = Object.keys(row);
+                        let cCol = keys.find(k => k.toLowerCase().includes('codigo') || k.toLowerCase().includes('cliente')) || keys[0];
+                        let nCol = keys.find(k => k.toLowerCase().includes('nombre')) || keys[1];
+                        let gCol = keys.find(k => k.toLowerCase().includes('grupo')) || 'grupo';
+                        let rCol = keys.find(k => k.toLowerCase().includes('ruta')) || 'ruta';
+                        let dCol = keys.find(k => k.toLowerCase().includes('dia') || k.toLowerCase().includes('día')) || 'dia';
+                        let latCol = keys.find(k => k.toLowerCase().includes('lat')) || 'latitud';
+                        let lngCol = keys.find(k => k.toLowerCase().includes('lon') || k.toLowerCase().includes('lng')) || 'longitud';
+                        let dirCol = keys.find(k => k.toLowerCase().includes('dir') || k.toLowerCase().includes('domicilio')) || 'direccion';
+
+                        let rVal = row[rCol] ? String(row[rCol]).trim() : "S/R";
+                        if (rVal.length > 15 || rVal.includes(',')) rVal = "S/R";
+
+                        let gVal = row[gCol] ? String(row[gCol]).toUpperCase() : "SIN GRUPO";
+                        let m = gVal.match(/([0-9]+)/);
+                        let grupoClean = m ? "GRUPO_" + m[1].padStart(2, '0') : "Sin Grupo";
+
+                        if (MAPEO_RUTAS_GRUPOS[rVal]) {{
+                            grupoClean = MAPEO_RUTAS_GRUPOS[rVal];
+                        }}
+
+                        nuevosClientes.push({{
+                            codigo: String(row[cCol] || 'S/C').trim(),
+                            nombre: String(row[nCol] || 'Cliente').trim(),
+                            grupo: grupoClean,
+                            ruta: rVal,
+                            dia: row[dCol] ? String(row[dCol]).trim() : 'Sin Día',
+                            direccion: row[dirCol] ? String(row[dirCol]).trim() : 'Sin dirección',
+                            lat: row[latCol] ? parseFloat(row[latCol]) : null,
+                            lng: row[lngCol] ? parseFloat(row[lngCol]) : null
+                        }});
+                    }});
+
+                    rawClientes = nuevosClientes;
+                    procesarPropiedadesGeocercas();
+
+                    poblarFiltrosPermitidos();
+                    aplicarFiltros();
+                    alert("✅ Archivo CSV de clientes cargado y aplicado exitosamente.");
+                }}
+            }});
+        }}
+
+        function subirNuevoGeoJSON(event) {{
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {{
+                try {{
+                    const geojsonData = JSON.parse(e.target.result);
+                    rawGeocercas = geojsonData;
+                    
+                    procesarPropiedadesGeocercas();
+
+                    poblarFiltrosPermitidos();
+                    aplicarFiltros();
+                    alert("✅ Geocercas de Rutas cargadas y vinculadas exitosamente.");
+                }} catch(err) {{
+                    alert("❌ Error al procesar GeoJSON: " + err);
+                }}
+            }};
+            reader.readAsText(file);
+        }}
+
+        function subirNuevoGeoJSONDistribuidoras(event) {{
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {{
+                try {{
+                    const geojsonData = JSON.parse(e.target.result);
+                    rawDistribuidoras = geojsonData;
+
+                    aplicarFiltros();
+                    alert("✅ Geocercas de Distribuidoras cargadas y aplicadas en el mapa exitosamente.");
+                }} catch(err) {{
+                    alert("❌ Error al procesar GeoJSON de Distribuidoras: " + err);
+                }}
+            }};
+            reader.readAsText(file);
+        }}
+
+        function toggleDrawer() {{
+            const drawer = document.getElementById('mobile-drawer');
+            const label = document.getElementById('drawer-btn-label');
+            drawer.classList.toggle('collapsed');
+            label.innerHTML = drawer.classList.contains('collapsed') 
+                ? '<i class="fa-solid fa-chevron-up"></i> Mostrar Filtros e Indicadores' 
+                : '<i class="fa-solid fa-chevron-down"></i> Ocultar';
+            setTimeout(() => {{ if (map) map.invalidateSize(); }}, 360);
+        }}
+
+        function actualizarFechaActual() {{
+            const fecha = new Date();
+            const opciones = {{ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }};
+            let fechaTexto = fecha.toLocaleDateString('es-ES', opciones);
+            document.getElementById('fecha-actual').textContent = fechaTexto.charAt(0).toUpperCase() + fechaTexto.slice(1);
+        }}
+
+        function initDashboardConPermisos() {{
+            map = L.map('map').setView([13.6929, -89.2182], 11);
+            L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }}).addTo(map);
+
+            distribuidorasLayerGroup = L.layerGroup().addTo(map);
+            geocercasLayerGroup = L.layerGroup().addTo(map);
+            markersGroup = L.layerGroup().addTo(map);
+
+            procesarPropiedadesGeocercas();
+            poblarFiltrosPermitidos();
+            aplicarFiltros();
+        }}
+
+        function poblarFiltrosPermitidos() {{
+            const selectGrupo = document.getElementById('select-grupo');
+            selectGrupo.innerHTML = '';
+
+            const gruposUnicos = [...new Set(rawClientes.map(c => c.grupo))]
+                .filter(g => /^GRUPO_\\d+$/i.test(g))
+                .sort((a,b) => a.localeCompare(b, undefined, {{numeric: true}}));
+
+            if (usuarioActual.rol === 'Supervisor') {{
+                const opt = document.createElement('option');
+                opt.value = usuarioActual.grupo;
+                opt.textContent = usuarioActual.grupo;
+                selectGrupo.appendChild(opt);
+                selectGrupo.value = usuarioActual.grupo;
+                selectGrupo.disabled = true;
+            }} else {{
+                const optTodos = document.createElement('option');
+                optTodos.value = "TODOS";
+                optTodos.textContent = "-- Todos los Grupos --";
+                selectGrupo.appendChild(optTodos);
+
+                gruposUnicos.forEach(g => {{
+                    const opt = document.createElement('option');
+                    opt.value = g;
+                    opt.textContent = g;
+                    selectGrupo.appendChild(opt);
+                }});
+                selectGrupo.value = "TODOS";
+                selectGrupo.disabled = false;
+            }}
+
+            actualizarOpcionesRuta();
+        }}
+
+        function actualizarOpcionesRuta() {{
+            const selectGrupo = document.getElementById('select-grupo').value;
+            const selectRuta = document.getElementById('select-ruta');
+            const rutaPrevia = selectRuta.value;
+
+            selectRuta.innerHTML = '<option value="TODOS">-- Todas las Rutas --</option>';
+
+            let clientesFiltrados = rawClientes;
+            if (selectGrupo !== 'TODOS') {{
+                clientesFiltrados = rawClientes.filter(c => c.grupo === selectGrupo);
+            }}
+
+            const rutasUnicas = [...new Set(clientesFiltrados.map(c => c.ruta))]
+                .filter(r => r && r !== 'S/R' && r !== 'nan' && !r.includes(',') && r.length < 15)
+                .sort((a,b) => a.localeCompare(b, undefined, {{numeric: true}}));
+
+            rutasUnicas.forEach(r => {{
+                const opt = document.createElement('option');
+                opt.value = r;
+                opt.textContent = r;
+                selectRuta.appendChild(opt);
+            }});
+
+            if (rutasUnicas.includes(rutaPrevia)) selectRuta.value = rutaPrevia;
+        }}
+
+        function alCambiarGrupo() {{
+            actualizarOpcionesRuta();
+            aplicarFiltros();
+        }}
+
+        function alCambiarRuta() {{
+            const rutaSel = document.getElementById('select-ruta').value;
+            if (rutaSel !== 'TODOS') {{
+                const clienteRuta = rawClientes.find(c => c.ruta === rutaSel);
+                if (clienteRuta && clienteRuta.grupo && usuarioActual.rol !== 'Supervisor') {{
+                    document.getElementById('select-grupo').value = clienteRuta.grupo;
+                    actualizarOpcionesRuta();
+                    document.getElementById('select-ruta').value = rutaSel;
+                }}
+            }}
+            aplicarFiltros();
+        }}
+
+        function filtrarDia(dia, btn) {{
+            if (diaSeleccionado === dia) {{
+                diaSeleccionado = 'NINGUNO';
+                document.querySelectorAll('.btn-day').forEach(b => b.classList.remove('active'));
+            }} else {{
+                diaSeleccionado = dia;
+                document.querySelectorAll('.btn-day').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }}
+            aplicarFiltros();
+        }}
+
+        function cambiarEstadoVisitado(codigo, visitado) {{
+            clientesVisitadosMap.set(codigo, visitado);
+            const marker = clienteMarkersMap[codigo];
+            if (marker) {{
+                marker.setStyle({{
+                    fillColor: visitado ? '#16a34a' : '#2563eb',
+                    color: visitado ? '#15803d' : '#1e40af',
+                    fillOpacity: visitado ? 0.95 : 0.85
+                }});
+                const clientObj = rawClientes.find(c => c.codigo === codigo);
+                if (clientObj) marker.setPopupContent(generarPopupHTML(clientObj, visitado));
+            }}
+
+            const fila = document.getElementById(`row-cli-${{codigo}}`);
+            if (fila) {{
+                const cellEstado = fila.querySelector('.col-estado');
+                if (visitado) {{
+                    fila.classList.add('visited-row');
+                    if (cellEstado) cellEstado.innerHTML = '<span style="color:#16a34a; font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Visitado</span>';
+                }} else {{
+                    fila.classList.remove('visited-row');
+                    if (cellEstado) cellEstado.innerHTML = '<span style="color:#94a3b8;"><i class="fa-regular fa-circle"></i> Pendiente</span>';
+                }}
+            }}
+            actualizarKpisVisitas();
+        }}
+
+        function actualizarKpisVisitas() {{
+            let totalFiltrados = ultimoClientesFiltrados.length;
+            let visitadosCount = 0;
+            ultimoClientesFiltrados.forEach(c => {{
+                if (clientesVisitadosMap.get(c.codigo) === true) visitadosCount++;
+            }});
+
+            let pendientesCount = totalFiltrados - visitadosCount;
+            let porcentajeAvance = totalFiltrados > 0 ? Math.round((visitadosCount / totalFiltrados) * 100) : 0;
+
+            document.getElementById('kpi-visitados').innerText = visitadosCount;
+            document.getElementById('kpi-pendientes').innerText = pendientesCount;
+            document.getElementById('kpi-porcentaje').innerText = porcentajeAvance + '%';
+        }}
+
+        function generarPopupHTML(c, isVisited) {{
+            const chkAttr = isVisited ? "checked" : "";
+            let navButtons = c.lat && c.lng 
+                ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
+                    <a href="http://googleusercontent.com/maps.google.com/8${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
+                   </div>`
+                : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
+
+            return `
+                <div style="font-family: 'Inter', sans-serif; padding: 4px; min-width: 200px;">
+                    <b style="font-size: 0.95rem; color: #0f172a;">${{c.nombre}}</b><br>
+                    <hr style="margin: 6px 0; border: 0; border-top: 1px solid #cbd5e1;">
+                    <div style="font-size: 0.84rem; color: #334155; line-height: 1.5;">
+                        <b>Código:</b> ${{c.codigo}}<br>
+                        <b>Grupo:</b> ${{c.grupo}}<br>
+                        <b>Ruta:</b> ${{c.ruta}}<br>
+                        <b>Día:</b> ${{c.dia}}<br>
+                        <b>Dirección:</b> ${{c.direccion}}
+                    </div>
+                    ${{navButtons}}
+                    <div style="background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #cbd5e1; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="chk-vis-${{c.codigo}}" ${{chkAttr}} onchange="cambiarEstadoVisitado('${{c.codigo}}', this.checked)" style="width: 16px; height: 16px; cursor: pointer;">
+                        <label for="chk-vis-${{c.codigo}}" style="font-size: 0.82rem; font-weight: 700; color: #16a34a; cursor: pointer; user-select: none;">Marcar como Visitado</label>
+                    </div>
+                </div>
+            `;
+        }}
+
+        function seleccionarClienteEnMapa(codigo) {{
+            const marker = clienteMarkersMap[codigo];
+            const clientObj = rawClientes.find(c => c.codigo === codigo);
+
+            if (marker && clientObj && clientObj.lat && clientObj.lng) {{
+                if (window.innerWidth <= 768) {{
+                    const drawer = document.getElementById('mobile-drawer');
+                    if (!drawer.classList.contains('collapsed')) toggleDrawer();
+                }}
+                map.setView([clientObj.lat, clientObj.lng], 16, {{ animate: true }});
+                setTimeout(() => {{ marker.openPopup(); }}, 280);
+            }} else {{
+                alert("⚠️ Este cliente no posee coordenadas geográficas válidas.");
+            }}
+        }}
+
+        function puntoEnPoligono(point, vs) {{
+            const x = point[0], y = point[1];
+            let inside = false;
+            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {{
+                const xi = vs[i][0], yi = vs[i][1];
+                const xj = vs[j][0], yj = vs[j][1];
+                const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }}
+            return inside;
+        }}
+
+        function estaDentroDeGeocercas(lat, lng, featuresGeocercas) {{
+            if (!featuresGeocercas || featuresGeocercas.length === 0) return true;
+            const pt = [lng, lat];
+            for (let feat of featuresGeocercas) {{
+                const geom = feat.geometry;
+                if (!geom) continue;
+                if (geom.type === 'Polygon') {{
+                    for (let ring of geom.coordinates) {{ if (puntoEnPoligono(pt, ring)) return true; }}
+                }} else if (geom.type === 'MultiPolygon') {{
+                    for (let polyCoords of geom.coordinates) {{
+                        for (let ring of polyCoords) {{ if (puntoEnPoligono(pt, ring)) return true; }}
+                    }}
+                }}
+            }}
+            return false;
+        }}
+
+        function aplicarFiltros() {{
+            markersGroup.clearLayers();
+            geocercasLayerGroup.clearLayers();
+            distribuidorasLayerGroup.clearLayers();
+            Object.keys(clienteMarkersMap).forEach(key => delete clienteMarkersMap[key]);
+
+            const grupoSel = document.getElementById('select-grupo').value;
+            const rutaSel = document.getElementById('select-ruta').value;
+
+            let bounds = L.latLngBounds();
+
+            if (rawDistribuidoras && rawDistribuidoras.features && rawDistribuidoras.features.length > 0) {{
+                const distLayer = L.geoJSON(rawDistribuidoras, {{
+                    style: {{
+                        color: '#d9534f',
+                        weight: 2,
+                        fillColor: '#d9534f',
+                        fillOpacity: 0.12
+                    }},
+                    onEachFeature: function(feature, layer) {{
+                        const props = feature.properties || {{}};
+                        const nombreDist = props.nambe || props.Name || props.name || props.DISTRIBUIDORA || 'Distribuidora Bocadeli';
+                        layer.bindPopup(`
+                            <div style="font-family:'Inter',sans-serif; padding:4px;">
+                                <b style="color:#0b1e42; font-size:0.9rem;"><i class="fa-solid fa-building"></i> ${{nombreDist}}</b>
+                            </div>
+                        `);
+                    }}
+                }}).addTo(distribuidorasLayerGroup);
+
+                try {{
+                    const bDist = distLayer.getBounds();
+                    if (bDist.isValid()) bounds.extend(bDist);
+                }} catch(e) {{}}
+            }}
+
+            let featuresGeocercasFiltradas = [];
+            if (rawGeocercas && rawGeocercas.features) {{
+                featuresGeocercasFiltradas = rawGeocercas.features.filter(f => {{
+                    const g = f.properties.grupo_clean || 'Sin Grupo';
+                    if (grupoSel !== 'TODOS' && g !== grupoSel) return false;
+                    if (rutaSel !== 'TODOS') {{
+                        const r = f.properties.ruta_clean || '';
+                        if (r.toUpperCase() !== rutaSel.toUpperCase()) return false;
+                    }}
+                    return true;
+                }});
+
+                if (featuresGeocercasFiltradas.length > 0) {{
+                    const geoLayer = L.geoJSON({{ type: "FeatureCollection", features: featuresGeocercasFiltradas }}, {{
+                        style: function(feature) {{
+                            const r = feature.properties.ruta_clean || '';
+                            if (rutaSel !== 'TODOS' && r.toUpperCase() === rutaSel.toUpperCase()) {{
+                                return {{ color: '#0284c7', weight: 3, fillColor: '#38bdf8', fillOpacity: 0.20, className: 'glow-geofence' }};
+                            }}
+                            return {{ color: '#1e3a8a', weight: 1.5, fillColor: '#3b82f6', fillOpacity: 0.10 }};
+                        }},
+                        onEachFeature: function(feature, layer) {{
+                            const realRuta = feature.properties.ruta_clean || 'N/A';
+                            const realGrupo = feature.properties.grupo_clean || 'Sin Grupo';
+                            layer.bindPopup(`
+                                <div style="font-family:'Inter',sans-serif; padding:4px;">
+                                    <b style="color:#1e3a8a; font-size:0.9rem;"><i class="fa-solid fa-draw-polygon"></i> Cobertura Geocerca</b><br>
+                                    <b>Grupo:</b> ${{realGrupo}}<br>
+                                    <b>Ruta:</b> ${{realRuta}}
+                                </div>
+                            `);
+                        }}
+                    }}).addTo(geocercasLayerGroup);
+
+                    try {{
+                        const bGeo = geoLayer.getBounds();
+                        if (bGeo.isValid()) bounds.extend(bGeo);
+                    }} catch(e) {{}}
+                }}
+            }}
+
+            let clientesFiltrados = [];
+            if (diaSeleccionado !== 'NINGUNO') {{
+                clientesFiltrados = rawClientes.filter(c => {{
+                    const matchGrupo = (grupoSel === 'TODOS') || (c.grupo === grupoSel);
+                    const matchRuta = (rutaSel === 'TODOS') || (c.ruta === rutaSel);
+                    
+                    let matchDia = false;
+                    if (diaSeleccionado === 'TODOS') {{
+                        matchDia = true;
+                    }} else {{
+                        const d1 = (c.dia || '').normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+                        const d2 = diaSeleccionado.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+                        matchDia = (d1 === d2);
+                    }}
+                    return matchGrupo && matchRuta && matchDia;
+                }});
+            }}
+
+            ultimoClientesFiltrados = clientesFiltrados;
+
+            let conCoords = 0;
+            let clientesFueraGeocerca = [];
+
+            clientesFiltrados.forEach(c => {{
+                if (c.lat && c.lng && !isNaN(c.lat) && !isNaN(c.lng)) {{
+                    conCoords++;
+                    bounds.extend([c.lat, c.lng]);
+                    const isVisited = clientesVisitadosMap.get(c.codigo) || false;
+
+                    const marker = L.circleMarker([c.lat, c.lng], {{
+                        radius: 6,
+                        fillColor: isVisited ? '#16a34a' : '#2563eb',
+                        color: isVisited ? '#15803d' : '#1e40af',
+                        weight: 1.5,
+                        fillOpacity: 0.85
+                    }}).bindPopup(generarPopupHTML(c, isVisited));
+
+                    marker.addTo(markersGroup);
+                    clienteMarkersMap[c.codigo] = marker;
+
+                    if (!estaDentroDeGeocercas(c.lat, c.lng, featuresGeocercasFiltradas)) {{
+                        clientesFueraGeocerca.push(c);
+                    }}
+                }}
+            }});
+
+            ultimoClientesFuera = clientesFueraGeocerca;
+
+            const tablaBody = document.getElementById('tabla-clientes-body');
+            if (tablaBody) {{
+                tablaBody.innerHTML = '';
+                clientesFiltrados.slice(0, 300).forEach(c => {{
+                    const isVisited = clientesVisitadosMap.get(c.codigo) || false;
+                    const tr = document.createElement('tr');
+                    tr.id = `row-cli-${{c.codigo}}`;
+                    tr.className = `clickable-row ${{isVisited ? 'visited-row' : ''}}`;
+                    tr.onclick = () => seleccionarClienteEnMapa(c.codigo);
+
+                    tr.innerHTML = `
+                        <td style="font-weight: 700; color: #1e3a8a;">${{c.codigo}}</td>
+                        <td>${{c.nombre}}</td>
+                        <td><span style="background:#e0f2fe; color:#0369a1; padding:2px 5px; border-radius:4px; font-weight:bold;">${{c.ruta}}</span></td>
+                        <td>${{c.dia}}</td>
+                        <td class="col-estado">
+                            ${{isVisited 
+                                ? '<span style="color:#16a34a; font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Visitado</span>' 
+                                : '<span style="color:#94a3b8;"><i class="fa-regular fa-circle"></i> Pendiente</span>'}}
+                        </td>
+                    `;
+                    tablaBody.appendChild(tr);
+                }});
+            }}
+
+            const tablaFueraBody = document.getElementById('tabla-fuera-body');
+            if (tablaFueraBody) {{
+                tablaFueraBody.innerHTML = '';
+                clientesFueraGeocerca.forEach(c => {{
+                    const tr = document.createElement('tr');
+                    tr.className = `clickable-row outside-row`;
+                    tr.onclick = () => seleccionarClienteEnMapa(c.codigo);
+
+                    tr.innerHTML = `
+                        <td style="font-weight: 700; color: #dc2626;">${{c.codigo}}</td>
+                        <td>${{c.nombre}}</td>
+                        <td><span style="background:#fee2e2; color:#b91c1c; padding:2px 5px; border-radius:4px; font-weight:bold;">${{c.ruta}}</span></td>
+                        <td>${{c.dia}}</td>
+                    `;
+                    tablaFueraBody.appendChild(tr);
+                }});
+            }}
+
+            document.getElementById('kpi-total').innerText = clientesFiltrados.length;
+            document.getElementById('kpi-coords').innerText = conCoords;
+            document.getElementById('kpi-fuera').innerText = clientesFueraGeocerca.length;
+            
+            actualizarKpisVisitas();
+
+            if (bounds.isValid()) {{
+                map.fitBounds(bounds, {{ padding: [30, 30], maxZoom: 15, animate: true }});
+            }}
+        }}
+
+        function descargarClientesVisitados() {{
+            const listVisitados = [];
+            rawClientes.forEach(c => {{
+                if (clientesVisitadosMap.get(c.codigo) === true) {{
+                    listVisitados.push({{
+                        "Ruta": c.ruta,
+                        "Codigo": c.codigo,
+                        "Cliente": c.nombre,
+                        "Direccion": c.direccion,
+                        "Dia de visita": c.dia
+                    }});
+                }}
+            }});
+
+            if (listVisitados.length === 0) {{
+                alert("⚠️ No hay ningún cliente marcado como 'Visitado' aún.");
+                return;
+            }}
+
+            const worksheet = XLSX.utils.json_to_sheet(listVisitados);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes Visitados");
+
+            const fecha = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(workbook, `Clientes_Visitados_Bocadeli_${{fecha}}.xlsx`);
+        }}
+
+        function descargarItinerarioFiltrado() {{
+            if (!ultimoClientesFiltrados || ultimoClientesFiltrados.length === 0) {{
+                alert("⚠️ No hay clientes disponibles en la lista con los filtros seleccionados.");
+                return;
+            }}
+
+            const grupoSel = document.getElementById('select-grupo').value;
+            const rutaSel = document.getElementById('select-ruta').value;
+            const diaSel = diaSeleccionado;
+
+            const datosExportar = ultimoClientesFiltrados.map(c => ({{
+                "Grupo": c.grupo,
+                "Ruta": c.ruta,
+                "Codigo": c.codigo,
+                "Cliente": c.nombre,
+                "Direccion": c.direccion,
+                "Dia de visita": c.dia,
+                "Estado Visitado": clientesVisitadosMap.get(c.codigo) ? "SÍ" : "NO",
+                "Fuera de Geocerca": ultimoClientesFuera.some(f => f.codigo === c.codigo) ? "SÍ" : "NO"
+            }}));
+
+            const worksheet = XLSX.utils.json_to_sheet(datosExportar);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Itinerario");
+
+            const nombreGrupo = grupoSel !== 'TODOS' ? grupoSel : 'TodosGrupos';
+            const nombreRuta = rutaSel !== 'TODOS' ? `Ruta_${{rutaSel}}` : 'TodasRutas';
+            const nombreDia = diaSel !== 'TODOS' && diaSel !== 'NINGUNO' ? `_Dia_${{diaSel}}` : '';
+
+            XLSX.writeFile(workbook, `Itinerario_${{nombreGrupo}}_${{nombreRuta}}_${{nombreDia}}.xlsx`);
+        }}
+    </script>
+</body>
+</html>"""
+
+# Renderizar el HTML en Streamlit
+html_str = obtener_html_dashboard()
+components.html(html_str, height=900, scrolling=True)
