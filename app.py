@@ -6,7 +6,7 @@ import os
 
 # Configuración de página a pantalla completa
 st.set_page_config(
-    page_title="Dashboard Inteligencia Comercial - Bocadeli",
+    page_title="Ruta360 - Regional - Bocadeli",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -45,11 +45,9 @@ def obtener_html_dashboard():
         {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
     ]
 
-    # Logo SVG estilizado de Bocadeli vectorizado en Data-URI (Funciona 100% offline o en la nube)
-    logo_svg_inline = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 80' fill='%23ffffff'><text x='10' y='55' font-family='Arial, sans-serif' font-size='46' font-weight='900' letter-spacing='-1'>bocadeli</text><circle cx='290' cy='32' r='8' fill='%23dc2626'/></svg>"
+    logo_svg_inline = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 80' fill='%231e3a8a'><text x='10' y='55' font-family='Arial, sans-serif' font-size='46' font-weight='900' letter-spacing='-1'>bocadeli</text><circle cx='290' cy='32' r='8' fill='%23dc2626'/></svg>"
     logo_base64_src = logo_svg_inline
 
-    # Si existe una imagen física de logo localmente o en GitHub, la intenta leer y usar en su lugar
     posibles_nombres_logo = ["logo_bocadeli_blanco.png", "descarga_2.png", "descarga.png", "logo.png", "logo_bocadeli.png"]
     for nombre_logo in posibles_nombres_logo:
         if os.path.exists(nombre_logo):
@@ -66,7 +64,7 @@ def obtener_html_dashboard():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dashboard Inteligencia Comercial - Bocadeli</title>
+    <title>Ruta360 - Regional - Bocadeli</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -92,8 +90,8 @@ def obtener_html_dashboard():
             text-align: center; display: flex; flex-direction: column; gap: 14px;
         }}
         .login-card-container .login-logo {{
-            height: 52px; object-fit: contain; margin: 0 auto;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+            height: 64px; object-fit: contain; margin: 0 auto;
+            filter: brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2445%) hue-rotate(212deg) brightness(92%) contrast(97%);
         }}
         .login-card-container h2 {{ font-size: 1.25rem; font-weight: 700; color: #0b1e42; }}
         .login-card-container p {{ font-size: 0.85rem; color: #64748b; line-height: 1.4; }}
@@ -165,6 +163,14 @@ def obtener_html_dashboard():
         }}
         .admin-panel label {{ font-size: 0.72rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }}
         .admin-file-input {{ font-size: 0.75rem; color: #1e293b; width: 100%; }}
+        
+        .btn-save-data {{
+            background: #16a34a; color: white; border: none; padding: 8px;
+            border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            margin-top: 4px; transition: background 0.2s;
+        }}
+        .btn-save-data:hover {{ background: #15803d; }}
 
         .drawer-handle {{
             display: none; background: #0f172a; color: white; padding: 12px 16px;
@@ -278,7 +284,7 @@ def obtener_html_dashboard():
     <div id="login-modal">
         <div class="login-card-container">
             <img src="{logo_base64_src}" class="login-logo" alt="Logo Bocadeli">
-            <h2>Control de Acceso - SV Centro</h2>
+            <h2>Ruta360 - Regional</h2>
             <p>Seleccione su nombre e ingrese su contraseña para continuar:</p>
             
             <div class="login-input-group">
@@ -350,6 +356,9 @@ def obtener_html_dashboard():
                     <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">3. Geocercas Distribuidoras (GeoJSON):</span>
                     <input type="file" id="file-distribuidoras-input" accept=".geojson,.json" class="admin-file-input" onchange="subirNuevoGeoJSONDistribuidoras(event)">
                 </div>
+                <button class="btn-save-data" onclick="guardarDatosPermanentes()">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar y Confirmar Datos
+                </button>
             </div>
 
             <div class="filter-section">
@@ -450,9 +459,9 @@ def obtener_html_dashboard():
             '1.2.46': 'GRUPO_06'
         }};
 
-        let rawClientes = [];
-        let rawGeocercas = {{"type": "FeatureCollection", "features": []}};
-        let rawDistribuidoras = {{"type": "FeatureCollection", "features": []}};
+        let rawClientes = JSON.parse(localStorage.getItem('bocadeli_clientes_app')) || [];
+        let rawGeocercas = JSON.parse(localStorage.getItem('bocadeli_geocercas_app')) || {{"type": "FeatureCollection", "features": []}};
+        let rawDistribuidoras = JSON.parse(localStorage.getItem('bocadeli_distribuidoras_app')) || {{"type": "FeatureCollection", "features": []}};
         
         const listaUsuariosRoles = {json.dumps(usuarios_roles_data)};
 
@@ -466,13 +475,20 @@ def obtener_html_dashboard():
         let ultimoClientesFuera = [];
 
         window.onload = function() {{
-            localStorage.removeItem('bocadeli_custom_clientes');
-            localStorage.removeItem('bocadeli_custom_geocercas');
-            localStorage.removeItem('bocadeli_custom_distribuidoras');
-            
             actualizarFechaActual();
             poblarModalLogin();
         }};
+
+        function guardarDatosPermanentes() {{
+            try {{
+                localStorage.setItem('bocadeli_clientes_app', JSON.stringify(rawClientes));
+                localStorage.setItem('bocadeli_geocercas_app', JSON.stringify(rawGeocercas));
+                localStorage.setItem('bocadeli_distribuidoras_app', JSON.stringify(rawDistribuidoras));
+                alert("💾 ¡Información guardada exitosamente en la memoria local!");
+            }} catch(err) {{
+                alert("⚠️ Error al guardar los datos: " + err.message);
+            }}
+        }}
 
         function poblarModalLogin() {{
             const selectLogin = document.getElementById('select-usuario-login');
@@ -606,7 +622,7 @@ def obtener_html_dashboard():
 
                     poblarFiltrosPermitidos();
                     aplicarFiltros();
-                    alert("✅ Archivo CSV de clientes cargado y aplicado exitosamente.");
+                    alert("✅ Archivo CSV de clientes procesado correctamente.");
                 }}
             }});
         }}
@@ -625,7 +641,7 @@ def obtener_html_dashboard():
 
                     poblarFiltrosPermitidos();
                     aplicarFiltros();
-                    alert("✅ Geocercas de Rutas cargadas y vinculadas exitosamente.");
+                    alert("✅ Geocercas de Rutas cargadas exitosamente.");
                 }} catch(err) {{
                     alert("❌ Error al procesar GeoJSON: " + err);
                 }}
@@ -644,7 +660,7 @@ def obtener_html_dashboard():
                     rawDistribuidoras = geojsonData;
 
                     aplicarFiltros();
-                    alert("✅ Geocercas de Distribuidoras cargadas y aplicadas en el mapa exitosamente.");
+                    alert("✅ Geocercas de Distribuidoras cargadas exitosamente.");
                 }} catch(err) {{
                     alert("❌ Error al procesar GeoJSON de Distribuidoras: " + err);
                 }}
@@ -821,7 +837,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="http://googleusercontent.com/maps.google.com/9${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=$$0${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
