@@ -184,7 +184,6 @@ def obtener_html_dashboard():
         .login-btn:hover {{ background: #0b1e42; }}
         #login-error {{ color: #dc2626; font-size: 0.75rem; font-weight: 600; display: none; margin-top: -2px; }}
 
-        /* Texto al pie unificado dentro de la tarjeta blanca */
         .powered-by-card-text {{
             margin-top: 8px; font-size: 0.68rem; font-weight: 600;
             color: #94a3b8; letter-spacing: 0.02em; text-align: center;
@@ -531,7 +530,7 @@ def obtener_html_dashboard():
         const listaUsuariosRoles = {json.dumps(usuarios_roles_data)};
 
         let usuarioActual = null;
-        let diaSeleccionado = 'NINGUNO'; // Sin día seleccionado al ingresar
+        let diaSeleccionado = 'NINGUNO';
         let map, markersGroup, geocercasLayerGroup, distribuidorasLayerGroup;
         
         const clienteMarkersMap = {{}}; 
@@ -1043,7 +1042,6 @@ def obtener_html_dashboard():
                     }}
                 }}).addTo(distribuidorasLayerGroup);
 
-                // Solo si no hay filtro de grupo o ruta extendemos con distribuidoras
                 if (grupoSel === 'TODOS' && rutaSel === 'TODOS') {{
                     try {{
                         const bDist = distLayer.getBounds();
@@ -1110,12 +1108,8 @@ def obtener_html_dashboard():
                     return matchGrupo && matchRuta && matchDia;
                 }});
             }} else {{
-                // Si ningún día está seleccionado, filtramos los clientes pertenecientes al grupo/ruta elegidos
-                clientesFiltrados = rawClientes.filter(c => {{
-                    const matchGrupo = (grupoSel === 'TODOS') || (c.grupo === grupoSel);
-                    const matchRuta = (rutaSel === 'TODOS') || (c.ruta === rutaSel);
-                    return matchGrupo && matchRuta;
-                }});
+                // Si diaSeleccionado es NINGUNO (al deseleccionar filtro), la lista de clientes debe ser vacía
+                clientesFiltrados = [];
             }}
 
             ultimoClientesFiltrados = clientesFiltrados;
@@ -1197,7 +1191,6 @@ def obtener_html_dashboard():
             
             actualizarKpisVisitas();
 
-            // Auto-Zoom a la geocerca/grupo/ruta filtrada
             if (bounds.isValid()) {{
                 const maxZ = rutaSel !== 'TODOS' ? 15 : (grupoSel !== 'TODOS' ? 13 : 11);
                 map.fitBounds(bounds, {{ padding: [40, 40], maxZoom: maxZ, animate: true }});
