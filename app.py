@@ -4,17 +4,16 @@ import json
 import base64
 import os
 
-# 1. Configuración de página
+# Configuración de página
 st.set_page_config(
     page_title="Ruta360 - Regional - Bocadeli",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# 2. Ocultar la interfaz nativa de Streamlit a nivel del padre
+# Ocultar interfaz nativa de Streamlit Cloud
 st.markdown("""
     <style>
-        /* Desactivar cualquier elemento flotante de Streamlit Cloud */
         header, 
         [data-testid="stHeader"], 
         [data-testid="stAppHeader"],
@@ -36,7 +35,6 @@ st.markdown("""
             pointer-events: none !important;
         }
 
-        /* Bloquear scroll general del navegador y eliminar padding del contenedor */
         html, body, .stApp, [data-testid="stAppViewContainer"], .main, .block-container {
             padding: 0px !important;
             margin: 0px !important;
@@ -48,7 +46,6 @@ st.markdown("""
             background-color: #0b1e42 !important;
         }
 
-        /* Forzar al iframe a ocupar el 100% real de la pantalla */
         iframe {
             position: fixed !important;
             top: 0 !important;
@@ -147,7 +144,6 @@ def obtener_html_dashboard():
         html, body {{ height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden !important; background-color: #0b1e42; color: #1e293b; }}
         body {{ display: flex; flex-direction: column; position: relative; }}
         
-        /* Modal Login: Centrado Absoluto Perfecto en Pantalla Completa */
         #login-modal {{
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -161,7 +157,7 @@ def obtener_html_dashboard():
             padding: 16px;
         }}
         .login-card-container {{
-            background: #ffffff; width: 380px; max-width: 90%; padding: 26px 22px;
+            background: #ffffff; width: 380px; max-width: 92%; padding: 26px 22px 18px 22px;
             border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             text-align: center; display: flex; flex-direction: column; gap: 12px;
             margin: auto;
@@ -188,9 +184,11 @@ def obtener_html_dashboard():
         .login-btn:hover {{ background: #0b1e42; }}
         #login-error {{ color: #dc2626; font-size: 0.75rem; font-weight: 600; display: none; margin-top: -2px; }}
 
-        .powered-by-text {{
-            margin-top: 12px; font-size: 0.7rem; font-weight: 300;
-            color: rgba(255, 255, 255, 0.75); letter-spacing: 0.03em; text-align: center;
+        /* Texto al pie unificado dentro de la tarjeta blanca */
+        .powered-by-card-text {{
+            margin-top: 8px; font-size: 0.68rem; font-weight: 600;
+            color: #94a3b8; letter-spacing: 0.02em; text-align: center;
+            border-top: 1px solid #f1f5f9; padding-top: 10px; text-transform: lowercase;
         }}
 
         header {{
@@ -370,9 +368,10 @@ def obtener_html_dashboard():
             <div id="login-error">⚠️ Contraseña incorrecta. Intente nuevamente.</div>
 
             <button class="login-btn" onclick="validarLogin()">Ingresar al Dashboard</button>
-        </div>
-        <div class="powered-by-text">
-            powered by sales systems (commercial intelligence)
+
+            <div class="powered-by-card-text">
+                powered by sales systems (commercial intelligence)
+            </div>
         </div>
     </div>
 
@@ -443,7 +442,7 @@ def obtener_html_dashboard():
             <div class="filter-section">
                 <label><i class="fa-regular fa-calendar-days"></i> Día de Visita</label>
                 <div class="day-buttons">
-                    <button class="btn-day active" id="btn-TODOS" onclick="filtrarDia('TODOS', this)">TODOS</button>
+                    <button class="btn-day" id="btn-TODOS" onclick="filtrarDia('TODOS', this)">TODOS</button>
                     <button class="btn-day" id="btn-Lunes" onclick="filtrarDia('Lunes', this)">Lun</button>
                     <button class="btn-day" id="btn-Martes" onclick="filtrarDia('Martes', this)">Mar</button>
                     <button class="btn-day" id="btn-Miércoles" onclick="filtrarDia('Miércoles', this)">Mié</button>
@@ -532,7 +531,7 @@ def obtener_html_dashboard():
         const listaUsuariosRoles = {json.dumps(usuarios_roles_data)};
 
         let usuarioActual = null;
-        let diaSeleccionado = 'TODOS';
+        let diaSeleccionado = 'NINGUNO'; // Sin día seleccionado al ingresar
         let map, markersGroup, geocercasLayerGroup, distribuidorasLayerGroup;
         
         const clienteMarkersMap = {{}}; 
@@ -944,7 +943,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=$$0${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="http://googleusercontent.com/maps.google.com/4${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
@@ -1044,10 +1043,13 @@ def obtener_html_dashboard():
                     }}
                 }}).addTo(distribuidorasLayerGroup);
 
-                try {{
-                    const bDist = distLayer.getBounds();
-                    if (bDist.isValid()) bounds.extend(bDist);
-                }} catch(e) {{}}
+                // Solo si no hay filtro de grupo o ruta extendemos con distribuidoras
+                if (grupoSel === 'TODOS' && rutaSel === 'TODOS') {{
+                    try {{
+                        const bDist = distLayer.getBounds();
+                        if (bDist.isValid()) bounds.extend(bDist);
+                    }} catch(e) {{}}
+                }}
             }}
 
             let featuresGeocercasFiltradas = [];
@@ -1106,6 +1108,13 @@ def obtener_html_dashboard():
                         matchDia = (d1 === d2);
                     }}
                     return matchGrupo && matchRuta && matchDia;
+                }});
+            }} else {{
+                // Si ningún día está seleccionado, filtramos los clientes pertenecientes al grupo/ruta elegidos
+                clientesFiltrados = rawClientes.filter(c => {{
+                    const matchGrupo = (grupoSel === 'TODOS') || (c.grupo === grupoSel);
+                    const matchRuta = (rutaSel === 'TODOS') || (c.ruta === rutaSel);
+                    return matchGrupo && matchRuta;
                 }});
             }}
 
@@ -1188,8 +1197,10 @@ def obtener_html_dashboard():
             
             actualizarKpisVisitas();
 
+            // Auto-Zoom a la geocerca/grupo/ruta filtrada
             if (bounds.isValid()) {{
-                map.fitBounds(bounds, {{ padding: [30, 30], maxZoom: 15, animate: true }});
+                const maxZ = rutaSel !== 'TODOS' ? 15 : (grupoSel !== 'TODOS' ? 13 : 11);
+                map.fitBounds(bounds, {{ padding: [40, 40], maxZoom: maxZ, animate: true }});
             }}
         }}
 
@@ -1255,6 +1266,6 @@ def obtener_html_dashboard():
 </body>
 </html>"""
 
-# Renderizado del componente
+# Renderizado
 html_str = obtener_html_dashboard()
 components.html(html_str, height=0, scrolling=False)
