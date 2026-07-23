@@ -4,36 +4,46 @@ import json
 import base64
 import os
 
-# 1. Configuración de página a pantalla completa sin elementos de Streamlit
+# 1. Configuración de página a pantalla completa
 st.set_page_config(
     page_title="Ruta360 - Regional - Bocadeli",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# 2. Inyección CSS para ocultar completamente la interfaz predeterminada de Streamlit
+# 2. Inyección CSS Ultra-Agresiva para borrar barras e íconos de Streamlit Cloud
 st.markdown("""
     <style>
-        /* Ocultar barra superior nativa de Streamlit (Header, Avatar de Usuario, 3 puntos) */
-        [data-testid="stHeader"] {
-            display: none !important;
-            height: 0px !important;
-        }
-        
-        /* Ocultar el pie de página (Footer / Made with Streamlit) */
-        footer {
+        /* Ocultar la barra superior nativa de Streamlit (3 puntos, avatar, etc.) */
+        header, [data-testid="stHeader"] {
             display: none !important;
             visibility: hidden !important;
             height: 0px !important;
         }
         
-        /* Ocultar la barra de herramientas flotante inferior */
-        [data-testid="stStatusWidget"], .stDeployButton, #MainMenu {
+        /* Ocultar el pie de página */
+        footer, [data-testid="stFooter"] {
             display: none !important;
             visibility: hidden !important;
+            height: 0px !important;
         }
 
-        /* Eliminar absolutamente todos los márgenes y rellenos blancos del contenedor principal */
+        /* Ocultar el Action Toolbar (los íconos inferiores derechos) */
+        [data-testid="stActionButtonIcon"],
+        [data-testid="stElementActionElements"],
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"],
+        [data-testid="stStatusWidget"],
+        .stActionButton,
+        .stDeployButton,
+        #MainMenu {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        /* Eliminar rellenos y márgenes de la aplicación */
         .main .block-container {
             padding: 0rem !important;
             margin: 0rem !important;
@@ -47,7 +57,7 @@ st.markdown("""
             margin: 0px !important;
         }
 
-        /* Forzar que el iframe del HTML ocupe todo el espacio disponible */
+        /* Ajustar el contenedor del iframe para que ocupe todo el espacio */
         iframe {
             display: block !important;
             width: 100vw !important;
@@ -57,7 +67,6 @@ st.markdown("""
             padding: 0 !important;
         }
 
-        /* Desactivar scrollbars indeseados del contenedor raíz de Streamlit */
         html, body, [data-testid="stAppViewContainer"] {
             overflow: hidden !important;
             background-color: #0b1e42 !important;
@@ -941,7 +950,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="http://googleusercontent.com/maps.google.com/7${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="http://googleusercontent.com/maps.google.com/8${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
@@ -1252,6 +1261,6 @@ def obtener_html_dashboard():
 </body>
 </html>"""
 
-# Renderizar el HTML ocupando el 100% de alto y ancho
+# Renderizar el HTML
 html_str = obtener_html_dashboard()
 components.html(html_str, height=1000, scrolling=False)
