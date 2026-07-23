@@ -4,21 +4,64 @@ import json
 import base64
 import os
 
-# Configuración de página a pantalla completa
+# 1. Configuración de página a pantalla completa sin elementos de Streamlit
 st.set_page_config(
     page_title="Ruta360 - Regional - Bocadeli",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
+# 2. Inyección CSS para ocultar completamente la interfaz predeterminada de Streamlit
 st.markdown("""
     <style>
+        /* Ocultar barra superior nativa de Streamlit (Header, Avatar de Usuario, 3 puntos) */
+        [data-testid="stHeader"] {
+            display: none !important;
+            height: 0px !important;
+        }
+        
+        /* Ocultar el pie de página (Footer / Made with Streamlit) */
+        footer {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0px !important;
+        }
+        
+        /* Ocultar la barra de herramientas flotante inferior */
+        [data-testid="stStatusWidget"], .stDeployButton, #MainMenu {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* Eliminar absolutamente todos los márgenes y rellenos blancos del contenedor principal */
         .main .block-container {
             padding: 0rem !important;
+            margin: 0rem !important;
             max-width: 100% !important;
+            width: 100% !important;
+            height: 100vh !important;
         }
-        header {visibility: hidden;}
-        footer {visibility: hidden;}
+
+        .main {
+            padding: 0px !important;
+            margin: 0px !important;
+        }
+
+        /* Forzar que el iframe del HTML ocupe todo el espacio disponible */
+        iframe {
+            display: block !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Desactivar scrollbars indeseados del contenedor raíz de Streamlit */
+        html, body, [data-testid="stAppViewContainer"] {
+            overflow: hidden !important;
+            background-color: #0b1e42 !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -42,8 +85,7 @@ def obtener_html_dashboard():
         {"nombre": "PAOLA CASTANEDA", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
         {"nombre": "ALDAHIR RODRIGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
         {"nombre": "RENE DOMINGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
-        {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
-        {"nombre": "OSCAR BARRERA", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
+        {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
     ]
 
     logo_svg_inline = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 80' fill='%231e3a8a'><text x='10' y='55' font-family='Arial, sans-serif' font-size='46' font-weight='900' letter-spacing='-1'>bocadeli</text><circle cx='290' cy='32' r='8' fill='%23dc2626'/></svg>"
@@ -60,14 +102,15 @@ def obtener_html_dashboard():
             except Exception:
                 pass
 
-    # --- LECTURA AUTOMÁTICA DESDE GITHUB EN PYTHON ---
-    clientes_csv_raw = ""
-    if os.path.exists("clientes.csv"):
-        try:
-            with open("clientes.csv", "r", encoding="utf-8") as f:
-                clientes_csv_raw = f.read()
-        except:
-            pass
+    # --- LECTURA SEGURA DE ARCHIVOS EN BASE64 ---
+    clientes_b64 = ""
+    for name in ["clientes.csv", "clientes_centro.csv", "CLIENTES.csv"]:
+        if os.path.exists(name):
+            try:
+                with open(name, "rb") as f:
+                    clientes_b64 = base64.b64encode(f.read()).decode('utf-8')
+                break
+            except: pass
 
     geocercas_rutas_raw = "null"
     for name in ["geocercas_rutas.json", "geocercas_rutas.geojson"]:
@@ -76,8 +119,7 @@ def obtener_html_dashboard():
                 with open(name, "r", encoding="utf-8") as f:
                     geocercas_rutas_raw = f.read()
                 break
-            except:
-                pass
+            except: pass
 
     geocercas_dist_raw = "null"
     for name in ["geocercas_distribuidoras.json", "geocercas_distribuidoras.geojson"]:
@@ -86,8 +128,7 @@ def obtener_html_dashboard():
                 with open(name, "r", encoding="utf-8") as f:
                     geocercas_dist_raw = f.read()
                 break
-            except:
-                pass
+            except: pass
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -106,17 +147,18 @@ def obtener_html_dashboard():
 
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }}
-        body {{ display: flex; flex-direction: column; height: 100vh; background-color: #f4f6f9; color: #1e293b; overflow: hidden; }}
+        html, body {{ height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #f4f6f9; color: #1e293b; }}
+        body {{ display: flex; flex-direction: column; }}
         
         #login-modal {{
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(11, 30, 66, 0.88); backdrop-filter: blur(6px);
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(11, 30, 66, 0.92); backdrop-filter: blur(8px);
             display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
             padding: 20px;
         }}
         .login-card-container {{
             background: white; width: 420px; max-width: 90%; padding: 30px;
-            border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.4);
             text-align: center; display: flex; flex-direction: column; gap: 14px;
         }}
         .login-card-container .login-logo {{
@@ -148,9 +190,10 @@ def obtener_html_dashboard():
 
         header {{
             background: linear-gradient(135deg, #0b1e42 0%, #1e3a8a 100%);
-            color: white; padding: 6px 20px; display: flex;
+            color: white; padding: 8px 20px; display: flex;
             justify-content: space-between; align-items: center;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15); z-index: 1000;
+            height: 56px;
         }}
         .header-brand {{ display: flex; align-items: center; gap: 16px; }}
         .header-logo {{ height: 42px; width: auto; max-width: 150px; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }}
@@ -179,7 +222,7 @@ def obtener_html_dashboard():
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }}
 
-        .main-container {{ display: flex; flex: 1; position: relative; overflow: hidden; }}
+        .main-container {{ display: flex; flex: 1; position: relative; overflow: hidden; height: calc(100vh - 56px); }}
         
         .sidebar {{
             width: 395px; background: white; border-right: 1px solid #e2e8f0;
@@ -397,7 +440,7 @@ def obtener_html_dashboard():
             <div class="filter-section">
                 <label><i class="fa-regular fa-calendar-days"></i> Día de Visita</label>
                 <div class="day-buttons">
-                    <button class="btn-day" id="btn-TODOS" onclick="filtrarDia('TODOS', this)">TODOS</button>
+                    <button class="btn-day active" id="btn-TODOS" onclick="filtrarDia('TODOS', this)">TODOS</button>
                     <button class="btn-day" id="btn-Lunes" onclick="filtrarDia('Lunes', this)">Lun</button>
                     <button class="btn-day" id="btn-Martes" onclick="filtrarDia('Martes', this)">Mar</button>
                     <button class="btn-day" id="btn-Miércoles" onclick="filtrarDia('Miércoles', this)">Mié</button>
@@ -478,17 +521,15 @@ def obtener_html_dashboard():
             '1.2.46': 'GRUPO_06'
         }};
 
-        // Carga automática inicial desde archivos servidos por GitHub
         let rawClientes = [];
         let rawGeocercas = {geocercas_rutas_raw} || {{"type": "FeatureCollection", "features": []}};
         let rawDistribuidoras = {geocercas_dist_raw} || {{"type": "FeatureCollection", "features": []}};
-        
-        const rawCsvServidor = `{clientes_csv_raw.replace('`', '')}`;
+        const csvB64Servidor = "{clientes_b64}";
 
         const listaUsuariosRoles = {json.dumps(usuarios_roles_data)};
 
         let usuarioActual = null;
-        let diaSeleccionado = 'NINGUNO';
+        let diaSeleccionado = 'TODOS';
         let map, markersGroup, geocercasLayerGroup, distribuidorasLayerGroup;
         
         const clienteMarkersMap = {{}}; 
@@ -499,54 +540,58 @@ def obtener_html_dashboard():
         window.onload = function() {{
             actualizarFechaActual();
             poblarModalLogin();
-            procesarCsvServidorInicial();
+            procesarCsvBase64();
         }};
 
-        function procesarCsvServidorInicial() {{
-            if (!rawCsvServidor || rawCsvServidor.trim() === "") return;
+        function procesarCsvBase64() {{
+            if (!csvB64Servidor || csvB64Servidor === "") return;
+            try {{
+                const decodedCsv = decodeURIComponent(escape(atob(csvB64Servidor)));
+                Papa.parse(decodedCsv, {{
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {{
+                        let nuevosClientes = [];
+                        results.data.forEach(row => {{
+                            let keys = Object.keys(row);
+                            let cCol = keys.find(k => k.toLowerCase().includes('codigo') || k.toLowerCase().includes('cliente')) || keys[0];
+                            let nCol = keys.find(k => k.toLowerCase().includes('nombre')) || keys[1];
+                            let gCol = keys.find(k => k.toLowerCase().includes('grupo')) || 'grupo';
+                            let rCol = keys.find(k => k.toLowerCase().includes('ruta')) || 'ruta';
+                            let dCol = keys.find(k => k.toLowerCase().includes('dia') || k.toLowerCase().includes('día')) || 'dia';
+                            let latCol = keys.find(k => k.toLowerCase().includes('lat')) || 'latitud';
+                            let lngCol = keys.find(k => k.toLowerCase().includes('lon') || k.toLowerCase().includes('lng')) || 'longitud';
+                            let dirCol = keys.find(k => k.toLowerCase().includes('dir') || k.toLowerCase().includes('domicilio')) || 'direccion';
 
-            Papa.parse(rawCsvServidor, {{
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {{
-                    let nuevosClientes = [];
-                    results.data.forEach(row => {{
-                        let keys = Object.keys(row);
-                        let cCol = keys.find(k => k.toLowerCase().includes('codigo') || k.toLowerCase().includes('cliente')) || keys[0];
-                        let nCol = keys.find(k => k.toLowerCase().includes('nombre')) || keys[1];
-                        let gCol = keys.find(k => k.toLowerCase().includes('grupo')) || 'grupo';
-                        let rCol = keys.find(k => k.toLowerCase().includes('ruta')) || 'ruta';
-                        let dCol = keys.find(k => k.toLowerCase().includes('dia') || k.toLowerCase().includes('día')) || 'dia';
-                        let latCol = keys.find(k => k.toLowerCase().includes('lat')) || 'latitud';
-                        let lngCol = keys.find(k => k.toLowerCase().includes('lon') || k.toLowerCase().includes('lng')) || 'longitud';
-                        let dirCol = keys.find(k => k.toLowerCase().includes('dir') || k.toLowerCase().includes('domicilio')) || 'direccion';
+                            let rVal = row[rCol] ? String(row[rCol]).trim() : "S/R";
+                            if (rVal.length > 15 || rVal.includes(',')) rVal = "S/R";
 
-                        let rVal = row[rCol] ? String(row[rCol]).trim() : "S/R";
-                        if (rVal.length > 15 || rVal.includes(',')) rVal = "S/R";
+                            let gVal = row[gCol] ? String(row[gCol]).toUpperCase() : "SIN GRUPO";
+                            let m = gVal.match(/([0-9]+)/);
+                            let grupoClean = m ? "GRUPO_" + m[1].padStart(2, '0') : "Sin Grupo";
 
-                        let gVal = row[gCol] ? String(row[gCol]).toUpperCase() : "SIN GRUPO";
-                        let m = gVal.match(/([0-9]+)/);
-                        let grupoClean = m ? "GRUPO_" + m[1].padStart(2, '0') : "Sin Grupo";
+                            if (MAPEO_RUTAS_GRUPOS[rVal]) {{
+                                grupoClean = MAPEO_RUTAS_GRUPOS[rVal];
+                            }}
 
-                        if (MAPEO_RUTAS_GRUPOS[rVal]) {{
-                            grupoClean = MAPEO_RUTAS_GRUPOS[rVal];
-                        }}
-
-                        nuevosClientes.push({{
-                            codigo: String(row[cCol] || 'S/C').trim(),
-                            nombre: String(row[nCol] || 'Cliente').trim(),
-                            grupo: grupoClean,
-                            ruta: rVal,
-                            dia: row[dCol] ? String(row[dCol]).trim() : 'Sin Día',
-                            direccion: row[dirCol] ? String(row[dirCol]).trim() : 'Sin dirección',
-                            lat: row[latCol] ? parseFloat(row[latCol]) : null,
-                            lng: row[lngCol] ? parseFloat(row[lngCol]) : null
+                            nuevosClientes.push({{
+                                codigo: String(row[cCol] || 'S/C').trim(),
+                                nombre: String(row[nCol] || 'Cliente').trim(),
+                                grupo: grupoClean,
+                                ruta: rVal,
+                                dia: row[dCol] ? String(row[dCol]).trim() : 'Sin Día',
+                                direccion: row[dirCol] ? String(row[dirCol]).trim() : 'Sin dirección',
+                                lat: row[latCol] ? parseFloat(row[latCol]) : null,
+                                lng: row[lngCol] ? parseFloat(row[lngCol]) : null
+                            }});
                         }});
-                    }});
 
-                    rawClientes = nuevosClientes;
-                }}
-            }});
+                        rawClientes = nuevosClientes;
+                    }}
+                }});
+            }} catch(err) {{
+                console.error("Error al decodificar CSV: ", err);
+            }}
         }}
 
         function poblarModalLogin() {{
@@ -896,7 +941,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="http://googleusercontent.com/maps.google.com/5${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="http://googleusercontent.com/maps.google.com/7${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
@@ -1207,6 +1252,6 @@ def obtener_html_dashboard():
 </body>
 </html>"""
 
-# Renderizar el HTML en Streamlit
+# Renderizar el HTML ocupando el 100% de alto y ancho
 html_str = obtener_html_dashboard()
-components.html(html_str, height=900, scrolling=True)
+components.html(html_str, height=1000, scrolling=False)
