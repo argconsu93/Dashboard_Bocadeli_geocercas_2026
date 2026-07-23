@@ -80,7 +80,9 @@ def obtener_html_dashboard():
         {"nombre": "PAOLA CASTANEDA", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
         {"nombre": "ALDAHIR RODRIGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
         {"nombre": "RENE DOMINGUEZ", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
-        {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
+        {"nombre": "JACQUELINE GUILLEN", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"},
+        {"nombre": "LUIS RIVERA", "rol": "Jefatura", "grupo": "TODOS", "pass": "BOCADELI"},
+        {"nombre": "OSCAR BARRERA", "rol": "Analista", "grupo": "TODOS", "pass": "SVCENTRO"}
     ]
 
     logo_svg_inline = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 80' fill='%231e3a8a'><text x='10' y='55' font-family='Arial, sans-serif' font-size='46' font-weight='900' letter-spacing='-1'>bocadeli</text><circle cx='290' cy='32' r='8' fill='%23dc2626'/></svg>"
