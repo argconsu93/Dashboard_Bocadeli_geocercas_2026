@@ -59,6 +59,35 @@ def obtener_html_dashboard():
             except Exception:
                 pass
 
+    # --- LECTURA AUTOMÁTICA DESDE GITHUB EN PYTHON ---
+    clientes_csv_raw = ""
+    if os.path.exists("clientes.csv"):
+        try:
+            with open("clientes.csv", "r", encoding="utf-8") as f:
+                clientes_csv_raw = f.read()
+        except:
+            pass
+
+    geocercas_rutas_raw = "null"
+    for name in ["geocercas_rutas.json", "geocercas_rutas.geojson"]:
+        if os.path.exists(name):
+            try:
+                with open(name, "r", encoding="utf-8") as f:
+                    geocercas_rutas_raw = f.read()
+                break
+            except:
+                pass
+
+    geocercas_dist_raw = "null"
+    for name in ["geocercas_distribuidoras.json", "geocercas_distribuidoras.geojson"]:
+        if os.path.exists(name):
+            try:
+                with open(name, "r", encoding="utf-8") as f:
+                    geocercas_dist_raw = f.read()
+                break
+            except:
+                pass
+
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -163,14 +192,6 @@ def obtener_html_dashboard():
         }}
         .admin-panel label {{ font-size: 0.72rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }}
         .admin-file-input {{ font-size: 0.75rem; color: #1e293b; width: 100%; }}
-        
-        .btn-save-data {{
-            background: #16a34a; color: white; border: none; padding: 8px;
-            border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            margin-top: 4px; transition: background 0.2s;
-        }}
-        .btn-save-data:hover {{ background: #15803d; }}
 
         .drawer-handle {{
             display: none; background: #0f172a; color: white; padding: 12px 16px;
@@ -343,7 +364,7 @@ def obtener_html_dashboard():
             </div>
 
             <div class="admin-panel" id="panel-admin-actualizacion">
-                <label><i class="fa-solid fa-cloud-arrow-up"></i> Panel de Carga y Actualización (Admin)</label>
+                <label><i class="fa-solid fa-cloud-arrow-up"></i> Carga Temporal / Pruebas (Admin)</label>
                 <div>
                     <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px;">1. Clientes (CSV):</span>
                     <input type="file" id="file-csv-input" accept=".csv" class="admin-file-input" onchange="subirNuevoCSV(event)">
@@ -356,9 +377,6 @@ def obtener_html_dashboard():
                     <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">3. Geocercas Distribuidoras (GeoJSON):</span>
                     <input type="file" id="file-distribuidoras-input" accept=".geojson,.json" class="admin-file-input" onchange="subirNuevoGeoJSONDistribuidoras(event)">
                 </div>
-                <button class="btn-save-data" onclick="guardarDatosPermanentes()">
-                    <i class="fa-solid fa-floppy-disk"></i> Guardar y Confirmar Datos
-                </button>
             </div>
 
             <div class="filter-section">
@@ -459,10 +477,13 @@ def obtener_html_dashboard():
             '1.2.46': 'GRUPO_06'
         }};
 
-        let rawClientes = JSON.parse(localStorage.getItem('bocadeli_clientes_app')) || [];
-        let rawGeocercas = JSON.parse(localStorage.getItem('bocadeli_geocercas_app')) || {{"type": "FeatureCollection", "features": []}};
-        let rawDistribuidoras = JSON.parse(localStorage.getItem('bocadeli_distribuidoras_app')) || {{"type": "FeatureCollection", "features": []}};
+        // Carga automática inicial desde archivos servidos por GitHub
+        let rawClientes = [];
+        let rawGeocercas = {geocercas_rutas_raw} || {{"type": "FeatureCollection", "features": []}};
+        let rawDistribuidoras = {geocercas_dist_raw} || {{"type": "FeatureCollection", "features": []}};
         
+        const rawCsvServidor = `{clientes_csv_raw.replace('`', '')}`;
+
         const listaUsuariosRoles = {json.dumps(usuarios_roles_data)};
 
         let usuarioActual = null;
@@ -477,17 +498,54 @@ def obtener_html_dashboard():
         window.onload = function() {{
             actualizarFechaActual();
             poblarModalLogin();
+            procesarCsvServidorInicial();
         }};
 
-        function guardarDatosPermanentes() {{
-            try {{
-                localStorage.setItem('bocadeli_clientes_app', JSON.stringify(rawClientes));
-                localStorage.setItem('bocadeli_geocercas_app', JSON.stringify(rawGeocercas));
-                localStorage.setItem('bocadeli_distribuidoras_app', JSON.stringify(rawDistribuidoras));
-                alert("💾 ¡Información guardada exitosamente en la memoria local!");
-            }} catch(err) {{
-                alert("⚠️ Error al guardar los datos: " + err.message);
-            }}
+        function procesarCsvServidorInicial() {{
+            if (!rawCsvServidor || rawCsvServidor.trim() === "") return;
+
+            Papa.parse(rawCsvServidor, {{
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {{
+                    let nuevosClientes = [];
+                    results.data.forEach(row => {{
+                        let keys = Object.keys(row);
+                        let cCol = keys.find(k => k.toLowerCase().includes('codigo') || k.toLowerCase().includes('cliente')) || keys[0];
+                        let nCol = keys.find(k => k.toLowerCase().includes('nombre')) || keys[1];
+                        let gCol = keys.find(k => k.toLowerCase().includes('grupo')) || 'grupo';
+                        let rCol = keys.find(k => k.toLowerCase().includes('ruta')) || 'ruta';
+                        let dCol = keys.find(k => k.toLowerCase().includes('dia') || k.toLowerCase().includes('día')) || 'dia';
+                        let latCol = keys.find(k => k.toLowerCase().includes('lat')) || 'latitud';
+                        let lngCol = keys.find(k => k.toLowerCase().includes('lon') || k.toLowerCase().includes('lng')) || 'longitud';
+                        let dirCol = keys.find(k => k.toLowerCase().includes('dir') || k.toLowerCase().includes('domicilio')) || 'direccion';
+
+                        let rVal = row[rCol] ? String(row[rCol]).trim() : "S/R";
+                        if (rVal.length > 15 || rVal.includes(',')) rVal = "S/R";
+
+                        let gVal = row[gCol] ? String(row[gCol]).toUpperCase() : "SIN GRUPO";
+                        let m = gVal.match(/([0-9]+)/);
+                        let grupoClean = m ? "GRUPO_" + m[1].padStart(2, '0') : "Sin Grupo";
+
+                        if (MAPEO_RUTAS_GRUPOS[rVal]) {{
+                            grupoClean = MAPEO_RUTAS_GRUPOS[rVal];
+                        }}
+
+                        nuevosClientes.push({{
+                            codigo: String(row[cCol] || 'S/C').trim(),
+                            nombre: String(row[nCol] || 'Cliente').trim(),
+                            grupo: grupoClean,
+                            ruta: rVal,
+                            dia: row[dCol] ? String(row[dCol]).trim() : 'Sin Día',
+                            direccion: row[dirCol] ? String(row[dirCol]).trim() : 'Sin dirección',
+                            lat: row[latCol] ? parseFloat(row[latCol]) : null,
+                            lng: row[lngCol] ? parseFloat(row[lngCol]) : null
+                        }});
+                    }});
+
+                    rawClientes = nuevosClientes;
+                }}
+            }});
         }}
 
         function poblarModalLogin() {{
@@ -622,7 +680,7 @@ def obtener_html_dashboard():
 
                     poblarFiltrosPermitidos();
                     aplicarFiltros();
-                    alert("✅ Archivo CSV de clientes procesado correctamente.");
+                    alert("✅ Archivo CSV de clientes cargado en memoria local.");
                 }}
             }});
         }}
@@ -641,7 +699,7 @@ def obtener_html_dashboard():
 
                     poblarFiltrosPermitidos();
                     aplicarFiltros();
-                    alert("✅ Geocercas de Rutas cargadas exitosamente.");
+                    alert("✅ Geocercas de Rutas cargadas en memoria local.");
                 }} catch(err) {{
                     alert("❌ Error al procesar GeoJSON: " + err);
                 }}
@@ -660,7 +718,7 @@ def obtener_html_dashboard():
                     rawDistribuidoras = geojsonData;
 
                     aplicarFiltros();
-                    alert("✅ Geocercas de Distribuidoras cargadas exitosamente.");
+                    alert("✅ Geocercas de Distribuidoras cargadas en memoria local.");
                 }} catch(err) {{
                     alert("❌ Error al procesar GeoJSON de Distribuidoras: " + err);
                 }}
@@ -837,7 +895,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=$$0${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="http://googleusercontent.com/maps.google.com/5${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
