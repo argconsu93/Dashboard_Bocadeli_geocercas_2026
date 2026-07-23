@@ -4,60 +4,64 @@ import json
 import base64
 import os
 
-# 1. Configuración de página a pantalla completa
+# Configuración de página
 st.set_page_config(
     page_title="Ruta360 - Regional - Bocadeli",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# 2. Inyección CSS Ultra-Agresiva para borrar barras e íconos de Streamlit Cloud
+# CSS Totalmente Agresivo para eliminar elementos de Streamlit Cloud y barras de scroll
 st.markdown("""
     <style>
-        /* Ocultar la barra superior nativa de Streamlit (3 puntos, avatar, etc.) */
-        header, [data-testid="stHeader"] {
+        /* Ocultar Header de Streamlit (incluye avatar de usuario, login y 3 puntos) */
+        header, 
+        [data-testid="stHeader"], 
+        div[class*="stAppHeader"],
+        div[data-testid="stHeader"] {
             display: none !important;
             visibility: hidden !important;
             height: 0px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
         
-        /* Ocultar el pie de página */
-        footer, [data-testid="stFooter"] {
+        /* Ocultar Footer y marcas de agua */
+        footer, 
+        [data-testid="stFooter"],
+        .viewerBadge_container__1tB2o,
+        #MainMenu,
+        .stDeployButton {
             display: none !important;
             visibility: hidden !important;
             height: 0px !important;
+            opacity: 0 !important;
         }
 
-        /* Ocultar el Action Toolbar (los íconos inferiores derechos) */
+        /* Ocultar barra de acciones inferior / toolbar */
         [data-testid="stActionButtonIcon"],
         [data-testid="stElementActionElements"],
         [data-testid="stToolbar"],
         [data-testid="stDecoration"],
-        [data-testid="stStatusWidget"],
-        .stActionButton,
-        .stDeployButton,
-        #MainMenu {
+        [data-testid="stStatusWidget"] {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
-            pointer-events: none !important;
         }
 
-        /* Eliminar rellenos y márgenes de la aplicación */
-        .main .block-container {
+        /* Eliminar márgenes, rellenos y scrolls externos */
+        html, body, [data-testid="stAppViewContainer"], .main, .main .block-container {
             padding: 0rem !important;
             margin: 0rem !important;
-            max-width: 100% !important;
-            width: 100% !important;
+            width: 100vw !important;
             height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            overflow: hidden !important;
+            background-color: #0b1e42 !important;
         }
 
-        .main {
-            padding: 0px !important;
-            margin: 0px !important;
-        }
-
-        /* Ajustar el contenedor del iframe para que ocupe todo el espacio */
+        /* Ajuste responsivo del iframe */
         iframe {
             display: block !important;
             width: 100vw !important;
@@ -65,11 +69,6 @@ st.markdown("""
             border: none !important;
             margin: 0 !important;
             padding: 0 !important;
-        }
-
-        html, body, [data-testid="stAppViewContainer"] {
-            overflow: hidden !important;
-            background-color: #0b1e42 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -111,7 +110,6 @@ def obtener_html_dashboard():
             except Exception:
                 pass
 
-    # --- LECTURA SEGURA DE ARCHIVOS EN BASE64 ---
     clientes_b64 = ""
     for name in ["clientes.csv", "clientes_centro.csv", "CLIENTES.csv"]:
         if os.path.exists(name):
@@ -156,164 +154,163 @@ def obtener_html_dashboard():
 
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }}
-        html, body {{ height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #f4f6f9; color: #1e293b; }}
-        body {{ display: flex; flex-direction: column; }}
+        html, body {{ height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background-color: #0b1e42; color: #1e293b; }}
+        body {{ display: flex; flex-direction: column; position: relative; }}
         
+        /* Modal Login: Fondo Sólido Azul y Centrado Absoluto */
         #login-modal {{
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(11, 30, 66, 0.92); backdrop-filter: blur(8px);
-            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
-            padding: 20px;
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            background-color: #0b1e42;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999;
+            padding: 16px;
         }}
         .login-card-container {{
-            background: white; width: 420px; max-width: 90%; padding: 30px;
-            border-radius: 16px; box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            background: #ffffff; width: 400px; max-width: 95%; padding: 28px 24px;
+            border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
             text-align: center; display: flex; flex-direction: column; gap: 14px;
         }}
         .login-card-container .login-logo {{
-            height: 64px; object-fit: contain; margin: 0 auto;
+            height: 56px; object-fit: contain; margin: 0 auto;
             filter: brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2445%) hue-rotate(212deg) brightness(92%) contrast(97%);
         }}
-        .login-card-container h2 {{ font-size: 1.25rem; font-weight: 700; color: #0b1e42; }}
-        .login-card-container p {{ font-size: 0.85rem; color: #64748b; line-height: 1.4; }}
+        .login-card-container h2 {{ font-size: 1.2rem; font-weight: 700; color: #0b1e42; }}
+        .login-card-container p {{ font-size: 0.82rem; color: #64748b; line-height: 1.3; }}
         
         .login-input-group {{ text-align: left; display: flex; flex-direction: column; gap: 4px; }}
-        .login-input-group label {{ font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }}
+        .login-input-group label {{ font-size: 0.72rem; font-weight: 700; color: #475569; text-transform: uppercase; }}
         
         .login-select, .login-input {{
-            width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #cbd5e1;
-            font-size: 0.88rem; font-weight: 600; color: #0f172a; outline: none; background: #f8fafc;
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;
+            font-size: 0.85rem; font-weight: 600; color: #0f172a; outline: none; background: #f8fafc;
         }}
         .login-btn {{
             background: #1e3a8a; color: white; border: none; padding: 12px;
-            border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
-            transition: background 0.2s; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); margin-top: 6px;
+            border-radius: 8px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+            transition: background 0.2s; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); margin-top: 4px;
         }}
         .login-btn:hover {{ background: #0b1e42; }}
-        #login-error {{ color: #dc2626; font-size: 0.8rem; font-weight: 600; display: none; margin-top: -4px; }}
+        #login-error {{ color: #dc2626; font-size: 0.78rem; font-weight: 600; display: none; margin-top: -4px; }}
 
         .powered-by-text {{
-            margin-top: 14px; font-size: 0.75rem; font-weight: 300;
+            margin-top: 14px; font-size: 0.72rem; font-weight: 300;
             color: rgba(255, 255, 255, 0.75); letter-spacing: 0.03em; text-align: center;
         }}
 
         header {{
             background: linear-gradient(135deg, #0b1e42 0%, #1e3a8a 100%);
-            color: white; padding: 8px 20px; display: flex;
+            color: white; padding: 6px 16px; display: flex;
             justify-content: space-between; align-items: center;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15); z-index: 1000;
-            height: 56px;
+            height: 52px; flex-shrink: 0;
         }}
-        .header-brand {{ display: flex; align-items: center; gap: 16px; }}
-        .header-logo {{ height: 42px; width: auto; max-width: 150px; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }}
+        .header-brand {{ display: flex; align-items: center; gap: 12px; }}
+        .header-logo {{ height: 36px; width: auto; max-width: 130px; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }}
         .header-text-group {{ display: flex; flex-direction: column; }}
-        .header-title-text {{ font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; line-height: 1.2; }}
-        .header-sub-text {{ font-size: 0.82rem; font-weight: 500; color: #ffffff; opacity: 0.95; margin-top: 2px; }}
+        .header-title-text {{ font-size: 1.05rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; line-height: 1.1; }}
+        .header-sub-text {{ font-size: 0.75rem; font-weight: 500; color: #ffffff; opacity: 0.95; margin-top: 1px; }}
 
-        .header-user-info {{ display: flex; align-items: center; gap: 10px; }}
+        .header-user-info {{ display: flex; align-items: center; gap: 8px; }}
         .user-pill {{
             background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #ffffff; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem;
-            font-weight: 600; display: flex; align-items: center; gap: 6px;
+            color: #ffffff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;
+            font-weight: 600; display: flex; align-items: center; gap: 5px;
         }}
         .btn-logout {{
             background: rgba(220, 38, 38, 0.85); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem;
-            font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;
+            color: white; padding: 4px 8px; border-radius: 20px; font-size: 0.72rem;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;
             transition: background 0.2s;
         }}
         .btn-logout:hover {{ background: #dc2626; }}
 
         .badge-date {{
             background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #ffffff; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem;
-            font-weight: 600; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(4px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #ffffff; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;
+            font-weight: 600; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(4px);
         }}
 
-        .main-container {{ display: flex; flex: 1; position: relative; overflow: hidden; height: calc(100vh - 56px); }}
+        .main-container {{ display: flex; flex: 1; position: relative; overflow: hidden; height: calc(100vh - 52px); }}
         
         .sidebar {{
-            width: 395px; background: white; border-right: 1px solid #e2e8f0;
-            display: flex; flex-direction: column; gap: 12px; padding: 14px;
+            width: 380px; background: white; border-right: 1px solid #e2e8f0;
+            display: flex; flex-direction: column; gap: 10px; padding: 12px;
             overflow-y: auto; z-index: 500; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }}
 
         .admin-panel {{
-            background: #eff6ff; border: 1px dashed #3b82f6; padding: 10px;
-            border-radius: 10px; display: none; flex-direction: column; gap: 8px;
+            background: #eff6ff; border: 1px dashed #3b82f6; padding: 8px;
+            border-radius: 8px; display: none; flex-direction: column; gap: 6px;
         }}
-        .admin-panel label {{ font-size: 0.72rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }}
-        .admin-file-input {{ font-size: 0.75rem; color: #1e293b; width: 100%; }}
+        .admin-panel label {{ font-size: 0.7rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }}
+        .admin-file-input {{ font-size: 0.72rem; color: #1e293b; width: 100%; }}
 
         .drawer-handle {{
-            display: none; background: #0f172a; color: white; padding: 12px 16px;
-            border-radius: 14px 14px 0 0; cursor: pointer;
-            font-size: 0.85rem; font-weight: 700; box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+            display: none; background: #0f172a; color: white; padding: 10px 14px;
+            border-radius: 12px 12px 0 0; cursor: pointer;
+            font-size: 0.82rem; font-weight: 700; box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
             user-select: none;
         }}
         .drawer-handle .pill {{
-            width: 38px; height: 4px; background: rgba(255,255,255,0.4);
-            border-radius: 2px; margin: 0 auto 6px auto;
+            width: 36px; height: 4px; background: rgba(255,255,255,0.4);
+            border-radius: 2px; margin: 0 auto 5px auto;
         }}
 
-        .filter-section {{ background: #f8fafc; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0; }}
-        .filter-section label {{ font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 5px; display: block; }}
+        .filter-section {{ background: #f8fafc; padding: 8px 10px; border-radius: 8px; border: 1px solid #e2e8f0; }}
+        .filter-section label {{ font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 4px; display: block; }}
         
         select {{
-            width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;
-            font-size: 0.85rem; font-weight: 600; color: #0f172a; outline: none; background: white;
+            width: 100%; padding: 7px; border-radius: 6px; border: 1px solid #cbd5e1;
+            font-size: 0.82rem; font-weight: 600; color: #0f172a; outline: none; background: white;
         }}
         select:disabled {{ background-color: #e2e8f0; color: #64748b; cursor: not-allowed; }}
 
-        .day-buttons {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }}
+        .day-buttons {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }}
         .btn-day {{
-            padding: 7px 4px; border: 1px solid #cbd5e1; background: white;
-            border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+            padding: 6px 3px; border: 1px solid #cbd5e1; background: white;
+            border-radius: 6px; font-size: 0.7rem; font-weight: 600; cursor: pointer;
             text-align: center; color: #334155; transition: all 0.2s; user-select: none;
         }}
         .btn-day.active {{ background: #1e3a8a; color: white; border-color: #1e3a8a; }}
 
-        .kpi-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }}
+        .kpi-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }}
         .kpi-card {{
-            background: white; border: 1px solid #e2e8f0; padding: 8px 4px;
-            border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: white; border: 1px solid #e2e8f0; padding: 6px 4px;
+            border-radius: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }}
-        .kpi-card .val {{ font-size: 1.1rem; font-weight: 700; color: #1e3a8a; }}
-        .kpi-card .lbl {{ font-size: 0.58rem; font-weight: 600; color: #64748b; text-transform: uppercase; margin-top: 2px; }}
+        .kpi-card .val {{ font-size: 1.05rem; font-weight: 700; color: #1e3a8a; }}
+        .kpi-card .lbl {{ font-size: 0.55rem; font-weight: 600; color: #64748b; text-transform: uppercase; margin-top: 1px; }}
         .kpi-card.alert .val {{ color: #dc2626; }}
         .kpi-card.success .val {{ color: #16a34a; }}
         .kpi-card.info .val {{ color: #0284c7; }}
 
-        .download-section {{ display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }}
+        .download-section {{ display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }}
         
         .btn-download {{
-            width: 100%; padding: 10px 14px; border: none; border-radius: 8px;
-            font-size: 0.8rem; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 8px 12px; border: none; border-radius: 6px;
+            font-size: 0.78rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
             transition: all 0.2s ease; text-decoration: none;
         }}
-        .btn-download-visited {{ background-color: #16a34a; color: white; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25); }}
+        .btn-download-visited {{ background-color: #16a34a; color: white; }}
         .btn-download-visited:hover {{ background-color: #15803d; }}
 
-        .btn-download-itinerary {{ background-color: #0284c7; color: white; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25); }}
+        .btn-download-itinerary {{ background-color: #0284c7; color: white; }}
         .btn-download-itinerary:hover {{ background-color: #0369a1; }}
 
         .nav-btn {{
-            flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
-            padding: 6px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+            padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;
             text-decoration: none; color: white !important; transition: opacity 0.2s;
         }}
-        .nav-btn:hover {{ opacity: 0.9; }}
         .btn-gmaps {{ background-color: #4285F4; }}
         .btn-waze {{ background-color: #33CCFF; color: #000000 !important; }}
 
-        .table-section {{ background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-top: 2px; }}
-        .table-title {{ font-size: 0.78rem; font-weight: 700; color: #1e293b; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }}
-        .table-wrapper {{ max-height: 160px; overflow-y: auto; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; }}
-        table {{ width: 100%; border-collapse: collapse; font-size: 0.72rem; }}
-        th {{ background-color: #f8fafc; color: #475569; font-weight: 700; text-align: left; padding: 5px 7px; position: sticky; top: 0; border-bottom: 2px solid #e2e8f0; z-index: 2; }}
-        td {{ padding: 5px 7px; border-bottom: 1px solid #f1f5f9; color: #334155; }}
+        .table-section {{ background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-top: 2px; }}
+        .table-title {{ font-size: 0.75rem; font-weight: 700; color: #1e293b; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; }}
+        .table-wrapper {{ max-height: 140px; overflow-y: auto; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; }}
+        table {{ width: 100%; border-collapse: collapse; font-size: 0.7rem; }}
+        th {{ background-color: #f8fafc; color: #475569; font-weight: 700; text-align: left; padding: 4px 6px; position: sticky; top: 0; border-bottom: 2px solid #e2e8f0; z-index: 2; }}
+        td {{ padding: 4px 6px; border-bottom: 1px solid #f1f5f9; color: #334155; }}
         tr.clickable-row {{ cursor: pointer; transition: background 0.15s; }}
         tr.clickable-row:hover {{ background-color: #e0f2fe !important; }}
         tr.visited-row {{ background-color: #f0fdf4; }}
@@ -335,21 +332,21 @@ def obtener_html_dashboard():
             .main-container {{ flex-direction: column; position: relative; }}
             #map {{ height: 100%; width: 100%; position: absolute; top: 0; left: 0; z-index: 1; }}
             .sidebar {{
-                position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 75vh; max-height: 75vh;
-                z-index: 1000; border-radius: 16px 16px 0 0; box-shadow: 0 -6px 20px rgba(0,0,0,0.3);
-                padding: 0 16px 16px 16px; border-right: none; background: white; overflow-y: auto;
+                position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 70vh; max-height: 70vh;
+                z-index: 1000; border-radius: 14px 14px 0 0; box-shadow: 0 -6px 20px rgba(0,0,0,0.3);
+                padding: 0 14px 14px 14px; border-right: none; background: white; overflow-y: auto;
                 transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(0);
             }}
-            .sidebar.collapsed {{ transform: translateY(calc(100% - 52px)); overflow: hidden; }}
+            .sidebar.collapsed {{ transform: translateY(calc(100% - 48px)); overflow: hidden; }}
             .drawer-handle {{
                 display: block; position: sticky; top: 0; background: #0f172a; color: white;
-                padding: 12px 16px; margin: 0 -16px 12px -16px; border-radius: 14px 14px 0 0;
-                cursor: pointer; z-index: 1010; user-select: none; min-height: 52px; box-sizing: border-box;
+                padding: 10px 14px; margin: 0 -14px 10px -14px; border-radius: 12px 12px 0 0;
+                cursor: pointer; z-index: 1010; user-select: none; min-height: 48px; box-sizing: border-box;
             }}
             .day-buttons {{ grid-template-columns: repeat(7, 1fr); }}
-            .header-title-text {{ font-size: 0.95rem; }}
-            .header-sub-text {{ font-size: 0.75rem; }}
-            .badge-date {{ font-size: 0.75rem; padding: 4px 10px; }}
+            .header-title-text {{ font-size: 0.9rem; }}
+            .header-sub-text {{ font-size: 0.7rem; }}
+            .badge-date {{ font-size: 0.7rem; padding: 3px 8px; }}
         }}
     </style>
 </head>
@@ -410,7 +407,7 @@ def obtener_html_dashboard():
                 <div class="pill"></div>
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                     <span><i class="fa-solid fa-sliders"></i> Filtros e Indicadores</span>
-                    <span id="drawer-btn-label" style="color: #38bdf8; font-size: 0.78rem; font-weight: 600;">
+                    <span id="drawer-btn-label" style="color: #38bdf8; font-size: 0.75rem; font-weight: 600;">
                         <i class="fa-solid fa-chevron-down"></i> Ocultar
                     </span>
                 </div>
@@ -419,15 +416,15 @@ def obtener_html_dashboard():
             <div class="admin-panel" id="panel-admin-actualizacion">
                 <label><i class="fa-solid fa-cloud-arrow-up"></i> Carga Temporal / Pruebas (Admin)</label>
                 <div>
-                    <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px;">1. Clientes (CSV):</span>
+                    <span style="font-size: 0.68rem; color: #475569; display:block; margin-bottom:2px;">1. Clientes (CSV):</span>
                     <input type="file" id="file-csv-input" accept=".csv" class="admin-file-input" onchange="subirNuevoCSV(event)">
                 </div>
                 <div>
-                    <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">2. Geocercas Rutas (GeoJSON):</span>
+                    <span style="font-size: 0.68rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">2. Geocercas Rutas (GeoJSON):</span>
                     <input type="file" id="file-geojson-input" accept=".geojson,.json" class="admin-file-input" onchange="subirNuevoGeoJSON(event)">
                 </div>
                 <div>
-                    <span style="font-size: 0.7rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">3. Geocercas Distribuidoras (GeoJSON):</span>
+                    <span style="font-size: 0.68rem; color: #475569; display:block; margin-bottom:2px; margin-top:4px;">3. Geocercas Distribuidoras (GeoJSON):</span>
                     <input type="file" id="file-distribuidoras-input" accept=".geojson,.json" class="admin-file-input" onchange="subirNuevoGeoJSONDistribuidoras(event)">
                 </div>
             </div>
@@ -471,7 +468,7 @@ def obtener_html_dashboard():
             <div class="table-section">
                 <div class="table-title">
                     <span><i class="fa-solid fa-table-list"></i> Detalle de Clientes Registrados</span>
-                    <span style="font-size: 0.62rem; color: #64748b; font-weight: normal;">(Haz clic para ubicar)</span>
+                    <span style="font-size: 0.6rem; color: #64748b; font-weight: normal;">(Clic para ubicar)</span>
                 </div>
                 <div class="table-wrapper">
                     <table>
@@ -950,7 +947,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="http://googleusercontent.com/maps.google.com/8${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="http://googleusercontent.com/maps.google.com/9${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
@@ -1261,6 +1258,6 @@ def obtener_html_dashboard():
 </body>
 </html>"""
 
-# Renderizar el HTML
+# Renderizado optimizado
 html_str = obtener_html_dashboard()
 components.html(html_str, height=1000, scrolling=False)
