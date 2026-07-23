@@ -4,55 +4,42 @@ import json
 import base64
 import os
 
-# Configuración de página
+# 1. Configuración de página
 st.set_page_config(
     page_title="Ruta360 - Regional - Bocadeli",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# CSS Totalmente Agresivo para eliminar elementos de Streamlit Cloud y barras de scroll
+# 2. Ocultar la interfaz nativa de Streamlit a nivel del padre
 st.markdown("""
     <style>
-        /* Ocultar Header de Streamlit (incluye avatar de usuario, login y 3 puntos) */
+        /* Desactivar cualquier elemento flotante de Streamlit Cloud */
         header, 
         [data-testid="stHeader"], 
-        div[class*="stAppHeader"],
-        div[data-testid="stHeader"] {
+        [data-testid="stAppHeader"],
+        .stAppHeader,
+        header[data-testid="stHeader"],
+        footer, 
+        [data-testid="stFooter"],
+        #MainMenu,
+        .stDeployButton,
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"],
+        [data-testid="stStatusWidget"],
+        [data-testid="stActionButtonIcon"] {
             display: none !important;
             visibility: hidden !important;
             height: 0px !important;
+            width: 0px !important;
             opacity: 0 !important;
             pointer-events: none !important;
         }
-        
-        /* Ocultar Footer y marcas de agua */
-        footer, 
-        [data-testid="stFooter"],
-        .viewerBadge_container__1tB2o,
-        #MainMenu,
-        .stDeployButton {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0px !important;
-            opacity: 0 !important;
-        }
 
-        /* Ocultar barra de acciones inferior / toolbar */
-        [data-testid="stActionButtonIcon"],
-        [data-testid="stElementActionElements"],
-        [data-testid="stToolbar"],
-        [data-testid="stDecoration"],
-        [data-testid="stStatusWidget"] {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-        }
-
-        /* Eliminar márgenes, rellenos y scrolls externos */
-        html, body, [data-testid="stAppViewContainer"], .main, .main .block-container {
-            padding: 0rem !important;
-            margin: 0rem !important;
+        /* Bloquear scroll general del navegador y eliminar padding del contenedor */
+        html, body, .stApp, [data-testid="stAppViewContainer"], .main, .block-container {
+            padding: 0px !important;
+            margin: 0px !important;
             width: 100vw !important;
             height: 100vh !important;
             max-width: 100vw !important;
@@ -61,14 +48,17 @@ st.markdown("""
             background-color: #0b1e42 !important;
         }
 
-        /* Ajuste responsivo del iframe */
+        /* Forzar al iframe a ocupar el 100% real de la pantalla */
         iframe {
-            display: block !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
             border: none !important;
             margin: 0 !important;
             padding: 0 !important;
+            z-index: 999999 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -154,45 +144,52 @@ def obtener_html_dashboard():
 
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }}
-        html, body {{ height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background-color: #0b1e42; color: #1e293b; }}
+        html, body {{ height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden !important; background-color: #0b1e42; color: #1e293b; }}
         body {{ display: flex; flex-direction: column; position: relative; }}
         
-        /* Modal Login: Fondo Sólido Azul y Centrado Absoluto */
+        /* Modal Login: Centrado Absoluto Perfecto en Pantalla Completa */
         #login-modal {{
-            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw; height: 100vh;
             background-color: #0b1e42;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999999;
             padding: 16px;
         }}
         .login-card-container {{
-            background: #ffffff; width: 400px; max-width: 95%; padding: 28px 24px;
-            border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            text-align: center; display: flex; flex-direction: column; gap: 14px;
+            background: #ffffff; width: 380px; max-width: 90%; padding: 26px 22px;
+            border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            text-align: center; display: flex; flex-direction: column; gap: 12px;
+            margin: auto;
         }}
         .login-card-container .login-logo {{
-            height: 56px; object-fit: contain; margin: 0 auto;
+            height: 52px; object-fit: contain; margin: 0 auto;
             filter: brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2445%) hue-rotate(212deg) brightness(92%) contrast(97%);
         }}
-        .login-card-container h2 {{ font-size: 1.2rem; font-weight: 700; color: #0b1e42; }}
-        .login-card-container p {{ font-size: 0.82rem; color: #64748b; line-height: 1.3; }}
+        .login-card-container h2 {{ font-size: 1.15rem; font-weight: 700; color: #0b1e42; }}
+        .login-card-container p {{ font-size: 0.8rem; color: #64748b; line-height: 1.3; }}
         
         .login-input-group {{ text-align: left; display: flex; flex-direction: column; gap: 4px; }}
-        .login-input-group label {{ font-size: 0.72rem; font-weight: 700; color: #475569; text-transform: uppercase; }}
+        .login-input-group label {{ font-size: 0.7rem; font-weight: 700; color: #475569; text-transform: uppercase; }}
         
         .login-select, .login-input {{
-            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;
-            font-size: 0.85rem; font-weight: 600; color: #0f172a; outline: none; background: #f8fafc;
+            width: 100%; padding: 9px; border-radius: 8px; border: 1px solid #cbd5e1;
+            font-size: 0.84rem; font-weight: 600; color: #0f172a; outline: none; background: #f8fafc;
         }}
         .login-btn {{
-            background: #1e3a8a; color: white; border: none; padding: 12px;
-            border-radius: 8px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+            background: #1e3a8a; color: white; border: none; padding: 11px;
+            border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
             transition: background 0.2s; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); margin-top: 4px;
         }}
         .login-btn:hover {{ background: #0b1e42; }}
-        #login-error {{ color: #dc2626; font-size: 0.78rem; font-weight: 600; display: none; margin-top: -4px; }}
+        #login-error {{ color: #dc2626; font-size: 0.75rem; font-weight: 600; display: none; margin-top: -2px; }}
 
         .powered-by-text {{
-            margin-top: 14px; font-size: 0.72rem; font-weight: 300;
+            margin-top: 12px; font-size: 0.7rem; font-weight: 300;
             color: rgba(255, 255, 255, 0.75); letter-spacing: 0.03em; text-align: center;
         }}
 
@@ -201,23 +198,23 @@ def obtener_html_dashboard():
             color: white; padding: 6px 16px; display: flex;
             justify-content: space-between; align-items: center;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.15); z-index: 1000;
-            height: 52px; flex-shrink: 0;
+            height: 50px; flex-shrink: 0;
         }}
         .header-brand {{ display: flex; align-items: center; gap: 12px; }}
-        .header-logo {{ height: 36px; width: auto; max-width: 130px; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }}
+        .header-logo {{ height: 34px; width: auto; max-width: 120px; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }}
         .header-text-group {{ display: flex; flex-direction: column; }}
-        .header-title-text {{ font-size: 1.05rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; line-height: 1.1; }}
-        .header-sub-text {{ font-size: 0.75rem; font-weight: 500; color: #ffffff; opacity: 0.95; margin-top: 1px; }}
+        .header-title-text {{ font-size: 1rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; line-height: 1.1; }}
+        .header-sub-text {{ font-size: 0.72rem; font-weight: 500; color: #ffffff; opacity: 0.95; margin-top: 1px; }}
 
         .header-user-info {{ display: flex; align-items: center; gap: 8px; }}
         .user-pill {{
             background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #ffffff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem;
+            color: #ffffff; padding: 4px 9px; border-radius: 20px; font-size: 0.72rem;
             font-weight: 600; display: flex; align-items: center; gap: 5px;
         }}
         .btn-logout {{
             background: rgba(220, 38, 38, 0.85); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white; padding: 4px 8px; border-radius: 20px; font-size: 0.72rem;
+            color: white; padding: 4px 8px; border-radius: 20px; font-size: 0.7rem;
             font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;
             transition: background 0.2s;
         }}
@@ -225,14 +222,14 @@ def obtener_html_dashboard():
 
         .badge-date {{
             background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #ffffff; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem;
-            font-weight: 600; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(4px);
+            color: #ffffff; padding: 4px 10px; border-radius: 20px; font-size: 0.72rem;
+            font-weight: 600; display: flex; align-items: center; gap: 5px; backdrop-filter: blur(4px);
         }}
 
-        .main-container {{ display: flex; flex: 1; position: relative; overflow: hidden; height: calc(100vh - 52px); }}
+        .main-container {{ display: flex; flex: 1; position: relative; overflow: hidden; height: calc(100vh - 50px); }}
         
         .sidebar {{
-            width: 380px; background: white; border-right: 1px solid #e2e8f0;
+            width: 370px; background: white; border-right: 1px solid #e2e8f0;
             display: flex; flex-direction: column; gap: 10px; padding: 12px;
             overflow-y: auto; z-index: 500; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }}
@@ -241,53 +238,53 @@ def obtener_html_dashboard():
             background: #eff6ff; border: 1px dashed #3b82f6; padding: 8px;
             border-radius: 8px; display: none; flex-direction: column; gap: 6px;
         }}
-        .admin-panel label {{ font-size: 0.7rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }}
-        .admin-file-input {{ font-size: 0.72rem; color: #1e293b; width: 100%; }}
+        .admin-panel label {{ font-size: 0.68rem; font-weight: 700; color: #1e40af; text-transform: uppercase; }}
+        .admin-file-input {{ font-size: 0.7rem; color: #1e293b; width: 100%; }}
 
         .drawer-handle {{
             display: none; background: #0f172a; color: white; padding: 10px 14px;
             border-radius: 12px 12px 0 0; cursor: pointer;
-            font-size: 0.82rem; font-weight: 700; box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+            font-size: 0.8rem; font-weight: 700; box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
             user-select: none;
         }}
         .drawer-handle .pill {{
-            width: 36px; height: 4px; background: rgba(255,255,255,0.4);
+            width: 34px; height: 4px; background: rgba(255,255,255,0.4);
             border-radius: 2px; margin: 0 auto 5px auto;
         }}
 
         .filter-section {{ background: #f8fafc; padding: 8px 10px; border-radius: 8px; border: 1px solid #e2e8f0; }}
-        .filter-section label {{ font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 4px; display: block; }}
+        .filter-section label {{ font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 4px; display: block; }}
         
         select {{
-            width: 100%; padding: 7px; border-radius: 6px; border: 1px solid #cbd5e1;
-            font-size: 0.82rem; font-weight: 600; color: #0f172a; outline: none; background: white;
+            width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1;
+            font-size: 0.8rem; font-weight: 600; color: #0f172a; outline: none; background: white;
         }}
         select:disabled {{ background-color: #e2e8f0; color: #64748b; cursor: not-allowed; }}
 
         .day-buttons {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }}
         .btn-day {{
-            padding: 6px 3px; border: 1px solid #cbd5e1; background: white;
-            border-radius: 6px; font-size: 0.7rem; font-weight: 600; cursor: pointer;
+            padding: 5px 2px; border: 1px solid #cbd5e1; background: white;
+            border-radius: 6px; font-size: 0.68rem; font-weight: 600; cursor: pointer;
             text-align: center; color: #334155; transition: all 0.2s; user-select: none;
         }}
         .btn-day.active {{ background: #1e3a8a; color: white; border-color: #1e3a8a; }}
 
         .kpi-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }}
         .kpi-card {{
-            background: white; border: 1px solid #e2e8f0; padding: 6px 4px;
+            background: white; border: 1px solid #e2e8f0; padding: 5px 3px;
             border-radius: 6px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }}
-        .kpi-card .val {{ font-size: 1.05rem; font-weight: 700; color: #1e3a8a; }}
-        .kpi-card .lbl {{ font-size: 0.55rem; font-weight: 600; color: #64748b; text-transform: uppercase; margin-top: 1px; }}
+        .kpi-card .val {{ font-size: 1rem; font-weight: 700; color: #1e3a8a; }}
+        .kpi-card .lbl {{ font-size: 0.52rem; font-weight: 600; color: #64748b; text-transform: uppercase; margin-top: 1px; }}
         .kpi-card.alert .val {{ color: #dc2626; }}
         .kpi-card.success .val {{ color: #16a34a; }}
         .kpi-card.info .val {{ color: #0284c7; }}
 
-        .download-section {{ display: flex; flex-direction: column; gap: 6px; margin-top: 2px; }}
+        .download-section {{ display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }}
         
         .btn-download {{
-            width: 100%; padding: 8px 12px; border: none; border-radius: 6px;
-            font-size: 0.78rem; font-weight: 700; cursor: pointer;
+            width: 100%; padding: 8px 10px; border: none; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 700; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 6px;
             transition: all 0.2s ease; text-decoration: none;
         }}
@@ -298,19 +295,19 @@ def obtener_html_dashboard():
         .btn-download-itinerary:hover {{ background-color: #0369a1; }}
 
         .nav-btn {{
-            flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
-            padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+            padding: 5px 6px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;
             text-decoration: none; color: white !important; transition: opacity 0.2s;
         }}
         .btn-gmaps {{ background-color: #4285F4; }}
         .btn-waze {{ background-color: #33CCFF; color: #000000 !important; }}
 
         .table-section {{ background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-top: 2px; }}
-        .table-title {{ font-size: 0.75rem; font-weight: 700; color: #1e293b; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; }}
-        .table-wrapper {{ max-height: 140px; overflow-y: auto; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; }}
-        table {{ width: 100%; border-collapse: collapse; font-size: 0.7rem; }}
-        th {{ background-color: #f8fafc; color: #475569; font-weight: 700; text-align: left; padding: 4px 6px; position: sticky; top: 0; border-bottom: 2px solid #e2e8f0; z-index: 2; }}
-        td {{ padding: 4px 6px; border-bottom: 1px solid #f1f5f9; color: #334155; }}
+        .table-title {{ font-size: 0.72rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }}
+        .table-wrapper {{ max-height: 130px; overflow-y: auto; overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; }}
+        table {{ width: 100%; border-collapse: collapse; font-size: 0.68rem; }}
+        th {{ background-color: #f8fafc; color: #475569; font-weight: 700; text-align: left; padding: 4px 5px; position: sticky; top: 0; border-bottom: 2px solid #e2e8f0; z-index: 2; }}
+        td {{ padding: 4px 5px; border-bottom: 1px solid #f1f5f9; color: #334155; }}
         tr.clickable-row {{ cursor: pointer; transition: background 0.15s; }}
         tr.clickable-row:hover {{ background-color: #e0f2fe !important; }}
         tr.visited-row {{ background-color: #f0fdf4; }}
@@ -344,9 +341,9 @@ def obtener_html_dashboard():
                 cursor: pointer; z-index: 1010; user-select: none; min-height: 48px; box-sizing: border-box;
             }}
             .day-buttons {{ grid-template-columns: repeat(7, 1fr); }}
-            .header-title-text {{ font-size: 0.9rem; }}
-            .header-sub-text {{ font-size: 0.7rem; }}
-            .badge-date {{ font-size: 0.7rem; padding: 3px 8px; }}
+            .header-title-text {{ font-size: 0.88rem; }}
+            .header-sub-text {{ font-size: 0.68rem; }}
+            .badge-date {{ font-size: 0.68rem; padding: 3px 8px; }}
         }}
     </style>
 </head>
@@ -947,7 +944,7 @@ def obtener_html_dashboard():
             const chkAttr = isVisited ? "checked" : "";
             let navButtons = c.lat && c.lng 
                 ? `<div style="display: flex; gap: 6px; margin: 8px 0;">
-                    <a href="http://googleusercontent.com/maps.google.com/9${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=$$0${{c.lat}},${{c.lng}}" target="_blank" class="nav-btn btn-gmaps"><i class="fa-solid fa-location-dot"></i> Maps</a>
                     <a href="https://waze.com/ul?ll=${{c.lat}},${{c.lng}}&navigate=yes" target="_blank" class="nav-btn btn-waze"><i class="fa-solid fa-location-arrow"></i> Waze</a>
                    </div>`
                 : `<div style="font-size: 0.75rem; color: #ef4444; margin: 6px 0; font-weight: 600;">⚠️ Sin coordenadas registradas</div>`;
@@ -1258,6 +1255,6 @@ def obtener_html_dashboard():
 </body>
 </html>"""
 
-# Renderizado optimizado
+# Renderizado del componente
 html_str = obtener_html_dashboard()
-components.html(html_str, height=1000, scrolling=False)
+components.html(html_str, height=0, scrolling=False)
